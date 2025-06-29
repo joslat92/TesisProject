@@ -1,0 +1,6 @@
+{
+  "lookback": 40,
+  "cols": [
+    "Target_Price"
+  ]
+}
