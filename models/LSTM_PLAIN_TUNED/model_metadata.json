@@ -1,0 +1,9 @@
+{
+    "features_used": [
+        "Target_Price"
+    ],
+    "lookback": 40,
+    "target_column": "Target_Price",
+    "scaler_path": "scaler.save",
+    "model_path": "model.keras"
+}
