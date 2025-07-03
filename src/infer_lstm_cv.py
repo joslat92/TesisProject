@@ -1,137 +1,148 @@
 # -*- coding: utf-8 -*-
 """
-Genera predicciones para un modelo LSTM entrenado con *cross-validation*.
+infer_lstm_cv.py
+----------------
+Genera predicciones para TODO el histórico con un modelo LSTM ya entrenado
+(cross-validation). Graba un CSV de cortesía en outputs/ y el
+predictions_all_folds.csv dentro de la carpeta del modelo.
 
-Uso
-----
+Uso:
     python src/infer_lstm_cv.py <model_dir> <csv_path> <target_column> [<lookback>]
 
-Ejemplo
--------
+Ejemplo:
     python src/infer_lstm_cv.py models/LSTM_PLAIN_TUNED \
-                                data/df_final_ready_plus_vix.csv \
-                                Target_Price 40
+           data/df_final_ready_plus_vix.csv Target_Price 40
 """
-# ---------------------------------------------------------------------------
-
-import sys
-import os
-import json
+import sys, json, joblib, numpy as np, pandas as pd
 from pathlib import Path
-
-import joblib
-import numpy as np
-import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import load_model
 
-# ---------------------------------------------------------------------------
-# 1. Funciones auxiliares
-# ---------------------------------------------------------------------------
-
-def make_windows(arr: np.ndarray, window: int) -> np.ndarray:
-    """Devuelve un array 3-D (n, window, n_features) con todas las ventanas
-    posibles de tamaño ``window``."""
-    X = [arr[i : i + window] for i in range(len(arr) - window)]
+# --------------------------------------------------------------------------- #
+# Utilidades
+# --------------------------------------------------------------------------- #
+def make_windows(arr: np.ndarray, lookback: int) -> np.ndarray:
+    """Crea un array 3-D (n_samples, lookback, n_features)."""
+    X = [arr[i : i + lookback] for i in range(len(arr) - lookback)]
     return np.asarray(X)
 
-# ---------------------------------------------------------------------------
-# 2. Argumentos desde consola
-# ---------------------------------------------------------------------------
 
+def print_head(df: pd.DataFrame, n=5):
+    """Imprime las primeras n filas bonito."""
+    with pd.option_context("display.width", None, "display.max_columns", None):
+        print(df.head(n))
+
+
+# --------------------------------------------------------------------------- #
+# 1) Argumentos CLI
+# --------------------------------------------------------------------------- #
 if len(sys.argv) < 4:
-    print("Uso: python infer_lstm_cv.py <model_dir> <csv_path> <target_column> [<lookback>]")
+    print(
+        "Uso: python infer_lstm_cv.py <model_dir> <csv_path> "
+        "<target_column> [<lookback>]"
+    )
     sys.exit(1)
 
-MODEL_DIR   = Path(sys.argv[1])
-CSV_PATH    = Path(sys.argv[2])
-TARGET_COL  = sys.argv[3]
-LOOKBACK_OV = int(sys.argv[4]) if len(sys.argv) >= 5 else None  # opcional
+MODEL_DIR = Path(sys.argv[1])
+CSV_PATH = Path(sys.argv[2])
+TARGET_COL = sys.argv[3]
+LOOKBACK_CLI = int(sys.argv[4]) if len(sys.argv) >= 5 else None
 
-# ---------------------------------------------------------------------------
-# 3. Leer metadatos del modelo
-# ---------------------------------------------------------------------------
-
+# --------------------------------------------------------------------------- #
+# 2) Metadatos del modelo
+# --------------------------------------------------------------------------- #
 meta_path = MODEL_DIR / "model_metadata.json"
-if not meta_path.exists():
-    raise FileNotFoundError(f"❌ No se encontró {meta_path}")
+if meta_path.exists():
+    # utf-8-sig ignora el BOM si lo hubiera
+    with open(meta_path, encoding="utf-8-sig") as fp:
+        meta = json.load(fp)
 
-with meta_path.open(encoding="utf-8") as fp:
-    meta = json.load(fp)
+    FEATURES = meta["features_used"]
+    TARGET = meta["target"]
+    LOOKBACK = meta["lookback"]
+    SCALER_PATH = MODEL_DIR / meta["scaler_path"]
+    MODEL_PATH = MODEL_DIR / meta["model_path"]
+else:
+    # Fallback (mínimo) a los argumentos
+    if LOOKBACK_CLI is None:
+        print("❌ Falta el lookback y no existe model_metadata.json")
+        sys.exit(1)
+    FEATURES = [TARGET_COL]          # sólo la target
+    TARGET = TARGET_COL
+    LOOKBACK = LOOKBACK_CLI
+    SCALER_PATH = MODEL_DIR / "scaler.save"
+    MODEL_PATH = MODEL_DIR / "model.keras"
 
-FEATURES     = meta.get("features_used") or [TARGET_COL]
-LOOKBACK     = LOOKBACK_OV or meta.get("lookback", 40)
-SCALER_FILE  = MODEL_DIR / meta.get("scaler_path",  "scaler.save")
-MODEL_FILE   = MODEL_DIR / meta.get("model_path",   "model.keras")
-
-print(f"📁 Modelo:          {MODEL_FILE}")
+print(f"📁 Modelo:          {MODEL_PATH}")
 print(f"📈 Columnas usadas: {FEATURES}")
 print(f"🔁 Lookback:        {LOOKBACK}")
 
-# ---------------------------------------------------------------------------
-# 4. Cargar datos y scaler
-# ---------------------------------------------------------------------------
+# --------------------------------------------------------------------------- #
+# 3) Carga de datos CSV
+# --------------------------------------------------------------------------- #
+df = pd.read_csv(CSV_PATH, parse_dates=["Date"])
+df = df.loc[:, ~df.columns.duplicated()]  # elimina duplicadas
 
-df = pd.read_csv(CSV_PATH)
-df = df.loc[:, ~df.columns.duplicated()]      # elimina duplicados de cabecera
-
-missing = [c for c in FEATURES if c not in df.columns]
+missing = set(FEATURES) - set(df.columns)
 if missing:
     raise ValueError(f"❌ Faltan columnas en el CSV: {missing}")
 
-scaler: MinMaxScaler = joblib.load(SCALER_FILE)
+# --------------------------------------------------------------------------- #
+# 4) Cargar scaler y transformar
+# --------------------------------------------------------------------------- #
+scaler: MinMaxScaler = joblib.load(SCALER_PATH)
 if scaler.n_features_in_ != len(FEATURES):
     raise ValueError(
-        f"❌ Scaler esperaba {scaler.n_features_in_} features, "
-        f"pero se le pasaron {len(FEATURES)}"
+        f"❌ El scaler esperaba {scaler.n_features_in_} columnas y "
+        f"recibió {len(FEATURES)}: {FEATURES}"
     )
 
-# Normaliza únicamente las columnas necesarias
 X_scaled = scaler.transform(df[FEATURES].values)
 
-# ---------------------------------------------------------------------------
-# 5. Ventanas y predicción
-# ---------------------------------------------------------------------------
-
+# --------------------------------------------------------------------------- #
+# 5) Ventanas y predicción
+# --------------------------------------------------------------------------- #
 X = make_windows(X_scaled, LOOKBACK)
 print(f"🧩 Shape final de entrada: {X.shape}")
 
-model = load_model(MODEL_FILE)
-y_pred_scaled = model.predict(X, verbose=0)
+model = load_model(MODEL_PATH)
+y_pred_scaled = model.predict(X, verbose=0).flatten()
 
-# ---------------------------------------------------------------------------
-# 6. Des-escalado de predicciones
-# ---------------------------------------------------------------------------
+# --------------------------------------------------------------------------- #
+# 6) Des-escalado (solo target) para y_pred e y_true
+# --------------------------------------------------------------------------- #
+# Creamos un scaler “parcial” solo para la columna target
+col_idx = FEATURES.index(TARGET)
+target_scaler = MinMaxScaler()
+target_scaler.min_, target_scaler.scale_ = (
+    scaler.min_[col_idx],
+    scaler.scale_[col_idx],
+)
 
-if len(FEATURES) == 1:
-    y_pred = scaler.inverse_transform(y_pred_scaled).flatten()
-else:
-    dummy = np.zeros((len(y_pred_scaled), scaler.n_features_in_))
-    idx_target = FEATURES.index(TARGET_COL)
-    dummy[:, idx_target] = y_pred_scaled.flatten()
-    y_pred = scaler.inverse_transform(dummy)[:, idx_target]
+y_pred = (y_pred_scaled - target_scaler.min_) / target_scaler.scale_
+y_true = df[TARGET].values[LOOKBACK:]  # recorta los primeros LOOKBACK
 
-# Serie real sin escalar
-y_true = df[TARGET_COL].values[LOOKBACK:]
-
-# ---------------------------------------------------------------------------
-# 7. Guardar resultados
-# ---------------------------------------------------------------------------
-
-date_col = "Date" if "Date" in df.columns else None
-out_df = pd.DataFrame({
-    "Date": df[date_col].iloc[LOOKBACK:] if date_col else np.arange(len(y_true)),
-    "y_true": y_true,
-    "y_pred": y_pred
-})
-
+# --------------------------------------------------------------------------- #
+# 7) Guardar resultados
+# --------------------------------------------------------------------------- #
+out_df = pd.DataFrame(
+    {
+        "Date": df["Date"].values[LOOKBACK:],
+        "y_true": y_true,
+        "y_pred": y_pred,
+    }
+)
+# a) dentro de la carpeta del modelo
 out_df.to_csv(MODEL_DIR / "predictions_all_folds.csv", index=False)
 print(f"📦  Predicciones guardadas en {MODEL_DIR/'predictions_all_folds.csv'}")
 
-# Además, copia rápida de cortesía a outputs/
+# b) copia de cortesía en outputs/
+Path("outputs").mkdir(exist_ok=True)
 out_df.to_csv("outputs/predicciones_lstm.csv", index=False)
 print("✅ Predicciones generadas y CSV de cortesía en outputs/predicciones_lstm.csv")
-
-# Muestra un vistazo
 print("🔍 Primeras 5 filas:")
-print(out_df.head())
+print_head(out_df)
+
+# --------------------------------------------------------------------------- #
+# Fin
+# --------------------------------------------------------------------------- #

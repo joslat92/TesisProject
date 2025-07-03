@@ -1,5 +1,5 @@
 """
-Train ARIMA baseline in a rolling-window backtest
+Train SARIMA baseline in a rolling-window backtest
 -------------------------------------------------
 Usage (from project root):
     python src/train_arima.py --train_len 1500 --test_len 20 --stride 20 \

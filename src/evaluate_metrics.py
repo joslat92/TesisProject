@@ -1,126 +1,58 @@
+# -*- coding: utf-8 -*-
 """
-evaluate_metrics.py
--------------------
-Evalúa las predicciones de cada modelo guardadas como CSV dentro de la carpeta
-`outputs/`.  Cada archivo .csv debe contener las columnas:
-
-    y_true, y_pred
-
-El script recorre todos los CSV, calcula MAE, RMSE, R² y precisión direccional,
-muestra los resultados por modelo y finalmente un resumen ordenado por MAE.
-
-Autor : Jose_agudelo
-Fecha : 2025-06-28
+Recorre todos los modelos en models/, lee preds.csv,
+compara contra el valor real y calcula MAE, RMSE, MASE.
+Resultados → outputs/metrics_summary.csv
 """
-
-import os
+import os, json
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from pathlib import Path
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+DATA_PATH = "data/df_final_ready_plus_vix.csv"   # contiene la serie Target_Price
+TARGET_COL = "Target_Price"
+MODELS_DIR = Path("models")
+OUT_PATH   = Path("outputs/metrics_summary.csv")
+OUT_PATH.parent.mkdir(exist_ok=True)
 
-# ----------------------------------------------------------------------
-# Métricas auxiliares
-# ----------------------------------------------------------------------
-def directional_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    """
-    Precisión direccional (Direction Accuracy – DA).
-    Compara el signo del cambio entre pasos consecutivos.
+# --- carga serie real ---
+df = pd.read_csv(DATA_PATH, parse_dates=["Date"]).set_index("Date")
+y_true_full = df[TARGET_COL]
 
-    Returns
-    -------
-    float
-        Proporción de aciertos en la dirección del movimiento.
-    """
-    return np.mean(np.sign(np.diff(y_true)) == np.sign(np.diff(y_pred)))
+records = []
+for model_dir in MODELS_DIR.iterdir():
+    if not model_dir.is_dir():
+        continue
+    preds_file = model_dir / "preds.csv"
+    if not preds_file.exists():
+        print(f"⚠️  {preds_file} no encontrado, salto…")
+        continue
 
+    preds = pd.read_csv(preds_file, parse_dates=["Date"]).set_index("Date")["y_pred"]
+    # Alinea para evitar días faltantes
+    common_idx = y_true_full.index.intersection(preds.index)
+    y_true = y_true_full.loc[common_idx]
+    y_pred = preds.loc[common_idx]
 
-# ----------------------------------------------------------------------
-# Funciones principales
-# ----------------------------------------------------------------------
-def evaluate_model(file_path: str, model_name: str) -> dict:
-    """
-    Calcula métricas para un único archivo de predicciones.
+    mae  = mean_absolute_error(y_true, y_pred)
+    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    mase = mae / mean_absolute_error(y_true, y_true.shift(1).dropna())  # escala naïve
 
-    Parameters
-    ----------
-    file_path : str
-        Ruta al CSV con columnas `y_true` y `y_pred`.
-    model_name : str
-        Nombre que se mostrará en pantalla y en el diccionario de resultados.
+    # lee RMSE guardado por el modelo si existe
+    metrics_json = model_dir / "metrics.json"
+    saved_rmse = json.load(open(metrics_json))["RMSE"] if metrics_json.exists() else None
 
-    Returns
-    -------
-    dict
-        Diccionario con las métricas calculadas.
-    """
-    df = pd.read_csv(file_path)
-
-    # Validación básica
-    required_cols = {'y_true', 'y_pred'}
-    if not required_cols.issubset(df.columns):
-        raise ValueError(
-            f"{file_path} debe contener las columnas {required_cols}"
-        )
-
-    y_true = df['y_true'].values
-    y_pred = df['y_pred'].values
-
-    mae = mean_absolute_error(y_true, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    r2 = r2_score(y_true, y_pred)
-    da = directional_accuracy(y_true, y_pred)
-
-    # Log en consola
-    print(f"\n📊  Resultados para {model_name}")
-    print(f"  MAE  : {mae:.4f}")
-    print(f"  RMSE : {rmse:.4f}")
-    print(f"  R²   : {r2:.4f}")
-    print(f"  DA   : {da:.4f}")
-
-    return {
-        "Model": model_name,
+    records.append({
+        "model": model_dir.name,
         "MAE": mae,
         "RMSE": rmse,
-        "R2": r2,
-        "DA": da,
-    }
+        "RMSE_saved": saved_rmse,
+        "MASE": mase,
+        "n_obs": len(common_idx)
+    })
 
-
-def evaluate_all(models_dir: str = 'outputs') -> None:
-    """
-    Busca todos los archivos *.csv en `models_dir`, evalúa y muestra
-    un resumen ordenado por MAE (de menor a mayor).
-
-    Parameters
-    ----------
-    models_dir : str, default 'outputs'
-        Carpeta donde se encuentran los CSV de las predicciones.
-    """
-    results = []
-
-    for file in os.listdir(models_dir):
-        if file.lower().endswith('.csv'):
-            file_path = os.path.join(models_dir, file)
-            model_name = os.path.splitext(file)[0]   # quita la extensión
-            results.append(evaluate_model(file_path, model_name))
-
-    if not results:
-        print("  No se encontraron archivos CSV en la carpeta especificada.")
-        return
-
-    df_results = (
-        pd.DataFrame(results)
-        .sort_values(by='MAE')
-        .reset_index(drop=True)
-    )
-
-    print("\n========================== RESUMEN ==========================")
-    print(df_results.to_string(index=False, float_format="{:.4f}".format))
-
-
-# ----------------------------------------------------------------------
-# Ejecución directa
-# ----------------------------------------------------------------------
-if __name__ == "__main__":
-    evaluate_all()
+summary = pd.DataFrame(records).sort_values("RMSE")
+summary.to_csv(OUT_PATH, index=False)
+print("✅  Métricas guardadas en", OUT_PATH)
+print(summary)
