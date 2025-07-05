@@ -1,0 +1,10 @@
+{
+  "features_used": [
+    "Target_Price",
+    "VIX_Close"
+  ],
+  "target": "Target_Price",
+  "lookback": 40,
+  "scaler_path": "scaler.save",
+  "model_path": "model.keras"
+}
