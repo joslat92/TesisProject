@@ -1,0 +1,5 @@
+{
+  "model": "LSTM_VIX_TUNED",
+  "MAE": 3.2683,
+  "RMSE": 4.8324
+}

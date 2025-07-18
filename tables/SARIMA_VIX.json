@@ -1,0 +1,5 @@
+{
+  "model": "SARIMA_VIX",
+  "MAE": 7.8204,
+  "RMSE": 11.4354
+}

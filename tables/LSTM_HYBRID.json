@@ -1,0 +1,5 @@
+{
+  "model": "LSTM_HYBRID",
+  "MAE": 2.7184,
+  "RMSE": 4.1376
+}

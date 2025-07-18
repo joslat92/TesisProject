@@ -1,0 +1,10 @@
+﻿{
+  "features":    ["Target_Price"],   # ← ¡sólo la variable objetivo!
+  "target":      "Target_Price",
+  "lookback":    40,
+  "train_start": "2015-01-02",
+  "train_end":   "2023-12-29",
+  "test_start":  "2024-01-02",
+  "test_end":    "2025-06-30"
+}
+

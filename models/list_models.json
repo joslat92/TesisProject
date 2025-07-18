@@ -1,0 +1,8 @@
+﻿{
+    "SARIMA_VIX":  "models/SARIMA_VIX/predictions_all_folds.csv",
+    "LSTM_HYBRID":  "models/LSTM_HYBRID/predictions_all_folds.csv",
+    "LSTM_PLAIN_TUNED":  "models/LSTM_PLAIN_TUNED/predictions_all_folds.csv",
+    "LSTM_VIX":  "models/LSTM_VIX/predictions_all_folds.csv",
+    "LSTM_NO_VIX_TUNED":  "models/LSTM_NO_VIX_TUNED/predictions_all_folds.csv",
+    "LSTM_VIX_TUNED":  "models/LSTM_VIX_TUNED/predictions_all_folds.csv"
+}

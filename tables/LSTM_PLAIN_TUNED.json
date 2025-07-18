@@ -1,0 +1,5 @@
+{
+  "model": "LSTM_PLAIN_TUNED",
+  "MAE": 3.0718,
+  "RMSE": 4.509
+}
