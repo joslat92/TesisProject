@@ -1,6 +1,6 @@
-# dm_test.py ──────────────────────────────────────────────────────────────
+﻿# dm_test.py â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 """
-Diebold-Mariano bilateral para comparar errores de predicción entre modelos.
+Diebold-Mariano bilateral para comparar errores de predicciÃ³n entre modelos.
 
 Cada CSV debe contener las columnas (en cualquier orden / alias):
     Date | y_true | y_pred
@@ -28,7 +28,7 @@ def dm_statistic(
     d = (np.abs(e1) if power == 1 else e1**2) - (np.abs(e2) if power == 1 else e2**2)
     mean_d = np.mean(d)
     n = len(d)
-    # varianza Newey–West con ventana h-1
+    # varianza Neweyâ€“West con ventana h-1
     gamma = [np.sum((d[: n - k] - mean_d) * (d[k:] - mean_d)) / n for k in range(h)]
     var_d = gamma[0] + 2 * np.sum(gamma[1:])
     dm = mean_d / np.sqrt(var_d / n)
@@ -45,7 +45,7 @@ ALIASES: Dict[str, set] = {
 
 
 def load_predictions(csv_file: Path) -> pd.DataFrame:
-    """Lee CSV y lo devuelve con columnas estándar."""
+    """Lee CSV y lo devuelve con columnas estÃ¡ndar."""
     txt = csv_file.read_text(encoding="utf-8", errors="ignore")[:1000]
     sep = ";" if ";" in txt and "," not in txt.split("\n")[0] else ","
     df = pd.read_csv(csv_file, sep=sep)
@@ -75,7 +75,7 @@ def main():
         help="carpeta donde buscar subcarpetas de modelo (por defecto 'models')",
     )
     ap.add_argument(
-        "--h", type=int, default=1, help="horizonte de predicción (steps-ahead)"
+        "--h", type=int, default=1, help="horizonte de predicciÃ³n (steps-ahead)"
     )
     ap.add_argument(
         "--power",
@@ -106,7 +106,7 @@ def main():
     results = []
     for (m1, e1), (m2, e2) in itertools.combinations(errors.items(), 2):
         common = e1.index.intersection(e2.index)
-        if len(common) < 30:  # muy pocas observaciones en común
+        if len(common) < 30:  # muy pocas observaciones en comÃºn
             continue
         dm, pval = dm_statistic(
             e1.loc[common].values, e2.loc[common].values, h=args.h, power=args.power
@@ -114,7 +114,7 @@ def main():
         results.append((m1, m2, dm, pval, len(common)))
 
     if not results:
-        print("⚠️  No se encontraron pares con fechas en común suficientes.")
+        print("âš ï¸  No se encontraron pares con fechas en comÃºn suficientes.")
         return
 
     out = pd.DataFrame(
@@ -122,7 +122,7 @@ def main():
     )
     out = out.sort_values("p_value")
     out.to_csv("outputs/dm_results.csv", index=False)
-    print("✅  Resultados guardados en outputs/dm_results.csv")
+    print("âœ…  Resultados guardados en outputs/dm_results.csv")
     print(out.to_string(index=False))
 
 
