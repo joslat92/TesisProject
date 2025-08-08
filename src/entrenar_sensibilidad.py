@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from sklearn.metrics import mean_squared_error
 from pathlib import Path
+
 
 # --- Función para crear secuencias ---
 def make_sequences(series, n_steps):
@@ -13,6 +13,7 @@ def make_sequences(series, n_steps):
         X.append(series[i : i + n_steps])
         y.append(series[i + n_steps])
     return np.array(X), np.array(y)
+
 
 # --- Función para ejecutar un experimento completo ---
 def run_experiment(n_steps, cfg):
@@ -29,7 +30,7 @@ def run_experiment(n_steps, cfg):
 
     # 3. Construir el modelo (idéntico salvo por el input_shape)
     inputs = keras.Input(shape=(n_steps, 1))
-    x = layers.LSTM(64, return_sequences=True)(inputs) # Asumiendo arquitectura base
+    x = layers.LSTM(64, return_sequences=True)(inputs)  # Asumiendo arquitectura base
     x = layers.LSTM(32)(x)
     outputs = layers.Dense(1)(x)
     model = keras.Model(inputs, outputs)
@@ -38,14 +39,17 @@ def run_experiment(n_steps, cfg):
     print(f"Modelo para N={n_steps} construido. Entrenando...")
 
     # 4. Entrenar el modelo
-    es_callback = keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
+    es_callback = keras.callbacks.EarlyStopping(
+        monitor="val_loss", patience=10, restore_best_weights=True
+    )
     model.fit(
-        X_train, y_train,
-        validation_split=0.2, # Usa 20% del train set para validación interna
+        X_train,
+        y_train,
+        validation_split=0.2,  # Usa 20% del train set para validación interna
         epochs=200,
         batch_size=cfg["batch_size"],
         callbacks=[es_callback],
-        verbose=2
+        verbose=2,
     )
 
     # 5. Evaluar y mostrar RMSE
@@ -58,15 +62,18 @@ def run_experiment(n_steps, cfg):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Guardar predicciones para la tabla final
-    pd.DataFrame({"y_true": y_test, "y_pred": y_pred}).to_csv(f"{out_dir}/predictions_all_folds.csv", index=False)
+    pd.DataFrame({"y_true": y_test, "y_pred": y_pred}).to_csv(
+        f"{out_dir}/predictions_all_folds.csv", index=False
+    )
 
     # Guardar el modelo entrenado
     model.save(f"{out_dir}/model.h5")
     print(f"Modelo y predicciones para N={n_steps} guardados en '{out_dir}'.")
     return rmse
 
+
 # --- Punto de entrada principal del script ---
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Configuración principal del experimento
     config = {"data_path": "data/df_final_ready_plus_vix.csv", "batch_size": 64}
 

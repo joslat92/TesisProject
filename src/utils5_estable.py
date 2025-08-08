@@ -1,14 +1,13 @@
-# src/utils5_estable.py
+﻿# src/utils5_estable.py
 """
-Utilidades comunes para la suite de predicción NASDAQ-100.
+Utilidades comunes para la suite de predicciÃ³n NASDAQ-100.
 
-Todas las funciones expuestas aquí están testeadas y documentadas.
+Todas las funciones expuestas aquÃ­ estÃ¡n testeadas y documentadas.
 """
 
 from __future__ import annotations
 import json
 from pathlib import Path
-import typing as t
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
@@ -16,6 +15,7 @@ from sklearn.preprocessing import MinMaxScaler
 # ----------------------------------------------------------------------
 # ESCALADORES
 # ----------------------------------------------------------------------
+
 
 def fit_minmax(
     series: pd.Series | np.ndarray, feature_range: tuple[float, float] = (0, 1)
@@ -27,23 +27,27 @@ def fit_minmax(
     scaler.fit(
         series.reshape(-1, 1)
         if isinstance(series, np.ndarray)
-        else series.values.reshape(-1, 1)
+        else series.to_numpy().reshape(-1, 1)
     )
     return scaler
+
 
 # ----------------------------------------------------------------------
 # WINDOWS PARA SERIES DE TIEMPO
 # ----------------------------------------------------------------------
 
+
 def make_windows(array: np.ndarray, window: int) -> np.ndarray:
-    """Genera ventanas deslizantes de tamaño fijo."""
+    """Genera ventanas deslizantes de tamaÃ±o fijo."""
     if array.ndim == 1:
         array = array.reshape(-1, 1)
     return np.stack([array[i : i + window] for i in range(len(array) - window)])
 
+
 # ----------------------------------------------------------------------
 # METADATOS DEL MODELO
 # ----------------------------------------------------------------------
+
 
 def save_metadata(
     path: str,
@@ -64,33 +68,42 @@ def save_metadata(
     with open(path, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=4)
 
+
 # ----------------------------------------------------------------------
-# UTILIDADES DE VALIDACIÓN CRUZADA
+# UTILIDADES DE VALIDACIÃ“N CRUZADA
 # ----------------------------------------------------------------------
+
 
 def expanding_cv_splits(y, n_folds=10):
     """
-    Genera los índices para una validación cruzada de ventana expandible.
+    Genera los Ã­ndices para una validaciÃ³n cruzada de ventana expandible.
     """
     n_samples = len(y)
     if n_folds >= n_samples:
-        raise ValueError("El número de folds debe ser menor que el número de muestras.")
+        raise ValueError(
+            "El nÃºmero de folds debe ser menor que el nÃºmero de muestras."
+        )
 
     initial_train_size = n_samples - n_folds
-    
+
     for i in range(n_folds):
         train_indices = range(initial_train_size + i)
         test_indices = range(initial_train_size + i, initial_train_size + i + 1)
         yield list(train_indices), list(test_indices)
 
-def save_fold_preds(y_true: pd.Series, y_pred: pd.Series, fold_n: int, out_dir: Path) -> pd.DataFrame:
+
+def save_fold_preds(
+    y_true: pd.Series, y_pred: pd.Series, fold_n: int, out_dir: Path
+) -> pd.DataFrame:
     """
     Combina los resultados de un fold en un DataFrame.
     """
-    fold_df = pd.DataFrame({
-        'Date': y_true.index,
-        'y_true': y_true.values,
-        'y_pred': y_pred.values,
-        'fold': fold_n
-    })
+    fold_df = pd.DataFrame(
+        {
+            "Date": y_true.index,
+            "y_true": y_true.to_numpy(),
+            "y_pred": y_pred.to_numpy(),
+            "fold": fold_n,
+        }
+    )
     return fold_df

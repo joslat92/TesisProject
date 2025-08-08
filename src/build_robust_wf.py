@@ -12,7 +12,7 @@ HYB_PATH = "models/LSTM_HYBRID/preds.csv"
 NVX_PATH = "models/LSTM_NO_VIX_TUNED/preds.csv"
 
 OUT_PATH = Path("appendices/data/robust_WF.csv")
-START, END = "2024-01-01", "2025-05-31"   # fechas del período
+START, END = "2024-01-01", "2025-05-31"  # fechas del período
 
 # ---------- Cargar ----------
 hyb = pd.read_csv(HYB_PATH, parse_dates=["Date"])
@@ -20,8 +20,10 @@ nvx = pd.read_csv(NVX_PATH, parse_dates=["Date"])
 
 # Normalizar nombre de columna predicción
 for cand in ["y_pred", "y_y_pred", "yhat"]:
-    if cand in hyb.columns: hyb.rename(columns={cand: "y_pred_hybrid"}, inplace=True)
-    if cand in nvx.columns: nvx.rename(columns={cand: "y_pred_no_vix"}, inplace=True)
+    if cand in hyb.columns:
+        hyb.rename(columns={cand: "y_pred_hybrid"}, inplace=True)
+    if cand in nvx.columns:
+        nvx.rename(columns={cand: "y_pred_no_vix"}, inplace=True)
 
 # Filtrar rango de fechas
 hyb = hyb[(hyb["Date"] >= START) & (hyb["Date"] <= END)]
