@@ -38,7 +38,16 @@ def load_all_predictions(models_dir: Path) -> pd.DataFrame:
     for csv_path in models_dir.glob("*/predictions_all_folds.csv"):
         model_name = csv_path.parent.name
         try:
-            df_pred = pd.read_csv(csv_path, parse_dates=["Date"])
+            df_pred = pd.read_csv(csv_path)
+            df_pred.rename(columns=lambda c: c.strip(), inplace=True)
+            if "Date" in df_pred.columns:
+                df_pred["Date"] = pd.to_datetime(df_pred["Date"], errors="coerce")
+            else:
+                df_pred.insert(
+                    0,
+                    "Date",
+                    pd.Series(pd.NaT, index=df_pred.index, dtype="datetime64[ns]"),
+                )
             # --- Lógica flexible para nombres de columnas ---
             cols = {c.lower(): c for c in df_pred.columns}
             y_pred_col = cols.get("y_pred") or cols.get("pred")
