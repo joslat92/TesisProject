@@ -1,18 +1,20 @@
-﻿import glob, os, json, pathlib
-import pandas as pd, numpy as np
+﻿import glob
+import os
+import json
+import pathlib
+import pandas as pd
+import numpy as np
 
 pathlib.Path("tables").mkdir(exist_ok=True)
 
 records = []
 for csv in glob.glob("models/*/predictions_all_folds.csv"):
-    model  = os.path.basename(os.path.dirname(csv))
-    df     = pd.read_csv(csv)
-    diff   = df["y_true"] - df["y_pred"]
-    mae    = np.mean(np.abs(diff))
-    rmse   = np.sqrt(np.mean(diff**2))
-    rec    = {"model": model,
-              "MAE":   round(mae, 4),
-              "RMSE":  round(rmse, 4)}
+    model = os.path.basename(os.path.dirname(csv))
+    df = pd.read_csv(csv)
+    diff = df["y_true"] - df["y_pred"]
+    mae = np.mean(np.abs(diff))
+    rmse = np.sqrt(np.mean(diff**2))
+    rec = {"model": model, "MAE": round(mae, 4), "RMSE": round(rmse, 4)}
     records.append(rec)
     # copia individual por si la quieres (opcional)
     with open(f"tables/{model}.json", "w") as fp:

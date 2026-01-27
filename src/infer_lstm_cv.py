@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 infer_lstm_cv.py
 ----------------
@@ -13,10 +13,18 @@ Ejemplo:
     python src/infer_lstm_cv.py models/LSTM_PLAIN_TUNED \
            data/df_final_ready_plus_vix.csv Target_Price 40
 """
-import sys, json, joblib, numpy as np, pandas as pd
+import sys
+import json
+import joblib
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import load_model
+from seeding import setup_repro
+
+setup_repro(seed=42)
+
 
 # --------------------------------------------------------------------------- #
 # Utilidades
@@ -67,7 +75,7 @@ else:
     if LOOKBACK_CLI is None:
         print("❌ Falta el lookback y no existe model_metadata.json")
         sys.exit(1)
-    FEATURES = [TARGET_COL]          # sólo la target
+    FEATURES = [TARGET_COL]  # sólo la target
     TARGET = TARGET_COL
     LOOKBACK = LOOKBACK_CLI
     SCALER_PATH = MODEL_DIR / "scaler.save"

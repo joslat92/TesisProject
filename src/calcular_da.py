@@ -7,7 +7,7 @@ model_dirs = [
     "models/LSTM_HYBRID",
     "models/LSTM_PLAIN_TUNED",
     "models/LSTM_NO_VIX_TUNED",
-    "models/ARIMA" 
+    "models/ARIMA",
     # Añade aquí los otros modelos que quieras incluir
 ]
 
@@ -25,16 +25,20 @@ for model_path_str in model_dirs:
         df = pd.read_csv(pred_file)
 
         # Asegurar que las columnas existan
-        if 'y_true' in df.columns and 'y_pred' in df.columns:
-            r_true = df['y_true'].diff()
-            r_pred = df['y_pred'] - df['y_true'].shift(1)
+        if "y_true" in df.columns and "y_pred" in df.columns:
+            r_true = df["y_true"].diff()
+            r_pred = df["y_pred"] - df["y_true"].shift(1)
 
             # Calcular la precisión direccional (omitiendo el primer valor NaN)
             da = (np.sign(r_true.iloc[1:]) == np.sign(r_pred.iloc[1:])).mean()
 
-            results.append({"Modelo": model_path.name, "Precisión Direccional (DA)": f"{da:.2%}"})
+            results.append(
+                {"Modelo": model_path.name, "Precisión Direccional (DA)": f"{da:.2%}"}
+            )
         else:
-            print(f"⚠️  Advertencia: El archivo en '{pred_file}' no contiene las columnas 'y_true' y 'y_pred'.")
+            print(
+                f"⚠️  Advertencia: El archivo en '{pred_file}' no contiene las columnas 'y_true' y 'y_pred'."
+            )
 
     except Exception as e:
         print(f"❌ Error procesando el archivo {pred_file}: {e}")
@@ -45,4 +49,6 @@ if results:
     print("\n--- Resultados de Precisión Direccional ---")
     print(results_df.to_string(index=False))
 else:
-    print("\nNo se pudieron calcular resultados. Verifica las rutas y los archivos CSV.")
+    print(
+        "\nNo se pudieron calcular resultados. Verifica las rutas y los archivos CSV."
+    )

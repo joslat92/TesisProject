@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Rolling/expanding-window cross-validation para LSTM.
 Genera predicciones alineadas con el esquema ARIMA/SARIMA:
@@ -17,7 +17,8 @@ Uso:
     python src/train_lstm_cv.py --data data/df_final_ready_plus_vix.csv \
                                 --cols Target_Price,VIX_Close
 """
-import argparse, json, os
+import argparse
+import json
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,10 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.models import Sequential
+from seeding import setup_repro
+
+setup_repro(seed=42)
+
 
 # -------------------------- helpers ----------------------------------- #
 def make_windows(arr: np.ndarray, lookback: int) -> tuple[np.ndarray, np.ndarray]:
@@ -33,7 +38,7 @@ def make_windows(arr: np.ndarray, lookback: int) -> tuple[np.ndarray, np.ndarray
     X, y = [], []
     for i in range(len(arr) - lookback):
         X.append(arr[i : i + lookback])
-        y.append(arr[i + lookback, 0])              # solo Target_Price
+        y.append(arr[i + lookback, 0])  # solo Target_Price
     return np.asarray(X), np.asarray(y)
 
 
@@ -74,12 +79,7 @@ def main(args):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # -------- carga y pre-procesamiento ------------------------------- #
-    df = (
-        pd.read_csv(args.data, parse_dates=["Date"])
-        .set_index("Date")
-        [all_cols]
-        .copy()
-    )
+    df = pd.read_csv(args.data, parse_dates=["Date"]).set_index("Date")[all_cols].copy()
 
     preds_global = []
 
@@ -137,9 +137,7 @@ def main(args):
     preds_df = pd.DataFrame(preds_global).sort_values("Date").reset_index(drop=True)
     preds_df.to_csv(out_dir / "predictions_all_folds.csv", index=False)
 
-    rmse = np.sqrt(
-        ((preds_df["y_true"] - preds_df["y_pred"]) ** 2).mean()
-    )
+    rmse = np.sqrt(((preds_df["y_true"] - preds_df["y_pred"]) ** 2).mean())
     with open(out_dir / "metrics.json", "w") as fp:
         json.dump({"RMSE": float(rmse)}, fp, indent=2)
 
