@@ -20,8 +20,15 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
    resumen/abstract desactualizados y discusión a medio redactar. **Es la versión que se
    va a terminar** (pendiente de confirmar con el director).
 3. **Historial de git (commits hasta e7ac2d3)**: la base de código ANTERIOR a la
-   reestructuración. Probablemente contiene el código que generó las tablas de la versión
-   multi-horizonte (SARIMAX, ablations, LSTM tuned). NO BORRAR NI REESCRIBIR ese historial.
+   reestructuración. NO BORRAR NI REESCRIBIR ese historial. ⚠️ Verificado 2026-06-09:
+   sus resultados (tables/table_7_1_metrics.csv, dm_results.csv) son de una TERCERA
+   campaña — backtest rolling walk-forward de 53 folds en NIVELES de precio (RMSE 4–11),
+   todo T+1/bloques de 20 pasos. NO contiene el código multi-horizonte (T=5/10/20 sobre
+   retornos) que generó las tablas del doc "Numeros normales"; ese código hay que
+   buscarlo fuera del repo o reimplementarlo. Sí contiene SARIMA/SARIMAX, LSTM con
+   exógenas, hybrid y ablation (entrenar_sensibilidad.py), y su ARIMA multi-paso es
+   correcto (forecast genuino, sin fuga) — usarlo como referencia para el fix del bug.
+   Disponible en worktree `../TesisProject-legacy`.
 4. **Árbol de trabajo actual (29-12-2025)**: reestructuración limpia y modular del
    pipeline, SIN commitear. Corrida preliminar solo con RW/ARIMA/LSTM. ⚠️ Sus resultados
    son SOSPECHOSOS (ver "Bug conocido") y sus figuras no son las canónicas de la tesis.
