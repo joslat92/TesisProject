@@ -1,8 +1,0 @@
-{
-  "csv": "data/df_final_ready_plus_vix.csv",
-  "train_len": 1500,
-  "test_len": 20,
-  "stride": 20,
-  "target": "diff",
-  "out_dir": "models/SARIMA"
-}

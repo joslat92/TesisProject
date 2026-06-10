@@ -1,5 +1,0 @@
-{
-  "features": ["Target_Price"],
-  "target":   "Target_Price",
-  "lookback": 40
-}

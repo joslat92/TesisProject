@@ -1,7 +1,0 @@
-{
-  "lookback": 40,
-  "cols": [
-    "Target_Price",
-    "VIX_Close"
-  ]
-}

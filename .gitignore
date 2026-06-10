@@ -1,18 +1,4 @@
-# Archivos de entorno de Python
+.venv/
+venv/
 __pycache__/
 *.pyc
-.env
-.venv/
-
-# Archivos generados automáticamente (marcados con ★)
-outputs/
-figs/
-requirements_congelados.txt
-
-# Modelos pesados y artefactos
-models/**/*.pkl
-models/**/*.keras
-models/**/*.save
-
-# Archivos de sistema
-.DS_Store

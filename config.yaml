@@ -1,0 +1,91 @@
+# config.yaml - SINGLE SOURCE OF TRUTH (SSOT)
+project:
+  name: "Tesis MMACC: Sentiment & VIX vs Market Efficiency"
+  version: "2.1.0 (Canonical + Params)"
+  seed: 42
+
+# --- 1. DATOS ---
+data:
+  raw_source: "data/raw/data.csv"
+  freq: "B"
+  target_col: "Target_Price"
+  
+  splits:
+    train_end: "2023-12-29"
+    oos_start: "2024-01-02"
+    oos_end:   "2024-12-31"
+    wf_year: 2024
+    wf_blocks: 12
+
+# --- 2. FEATURES ---
+features:
+  horizons: [1, 5, 10, 20]
+  
+  exog:
+    Sentiment_GDELT: [1, 2, 5, 10, 15]
+    VIX_Close: [1, 2, 5, 10, 15]
+  
+  target_transform: "log_return_accumulated"
+
+# --- 3. MODELOS Y PARÁMETROS (¡Sección Recuperada!) ---
+models:
+  active_models: 
+    - RW
+    - ARIMA
+    - SARIMAX
+    - LSTM
+
+  params:
+    rw:
+      strategy: "zero_return"
+    
+    arima:
+      order: [1, 1, 1]
+    
+    sarimax:
+      order: [1, 1, 1]
+      seasonal_order: [0, 1, 0, 5]
+      
+    lstm:
+      seq_len: 40
+      hidden_dim: 50
+      epochs: 30
+      batch_size: 32
+      patience: 5
+      variants:
+        LSTM_Plain: ["Target_Price"]
+        LSTM_Sent:  ["Target_Price", "Sentiment_GDELT"]
+        LSTM_Full:  ["Target_Price", "Sentiment_GDELT", "VIX_Close"]
+
+# --- 4. RUTAS (PATHS) ---
+paths:
+  splits_json: "data/processed/splits.json"
+  features_parquet_pattern: "data/processed/features_T{h}.parquet"
+  metadata_snapshot: "reports/data/metadata_snapshot.csv"
+
+  preds_oos_dir: "outputs/preds/OOS"
+  preds_wf_dir:  "outputs/preds/WF"
+  figures_dir:   "reports/figs"
+  
+  metrics_oos: "reports/data/metrics_OOS.csv"
+  metrics_wf:  "reports/data/metrics_WF.csv"
+  dm_results:  "reports/data/dm_summary.csv"
+  mz_results:  "reports/data/mz_summary_OOS.csv"
+
+# --- 5. CONTRATO (VALIDACIONES) ---
+contract:
+  naming:
+    oos: "preds_T{h}_{model}.csv"
+    wf:  "preds_T{h}_{model}_block{b}.csv"
+  
+  columns_required:
+    - Date
+    - h
+    - model
+    - y_true_ret
+    - y_pred_ret
+    - y_true_level
+    - y_pred_level
+  
+  columns_wf_extra:
+    - block
