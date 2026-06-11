@@ -40,7 +40,9 @@ models:
       strategy: "zero_return"
     
     arima:
-      order: [1, 1, 1]
+      # Orden sobre retornos diarios (ret_1d = diff(logP)): d=0 porque la serie
+      # ya está diferenciada; equivale a ARIMA(1,1,1) sobre logP.
+      order: [1, 0, 1]
     
     sarimax:
       order: [1, 1, 1]

@@ -100,7 +100,13 @@ def run_lstm():
         # Necesitamos saber qué fechas corresponden a X_all
         dates_all = df['Date'].iloc[seq_len:].reset_index(drop=True)
         
-        mask_train = dates_all <= train_end
+        # Purga anti-fuga en la frontera train/OOS: el target de la fila t
+        # abarca precios hasta t+h, así que una muestra de train solo es
+        # válida si su target se realiza completamente dentro del IS
+        # (fecha de realización t+h <= train_end). Sin esto, las últimas h
+        # muestras de train ven precios del OOS.
+        target_end_dates = df['Date'].shift(-h).iloc[seq_len:].reset_index(drop=True)
+        mask_train = target_end_dates <= train_end
         mask_oos = (dates_all >= oos_start) & (dates_all <= oos_end)
         
         X_train = X_all[mask_train]

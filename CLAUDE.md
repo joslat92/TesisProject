@@ -33,16 +33,20 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
    pipeline, SIN commitear. Corrida preliminar solo con RW/ARIMA/LSTM. ⚠️ Sus resultados
    son SOSPECHOSOS (ver "Bug conocido") y sus figuras no son las canónicas de la tesis.
 
-## Bug conocido (prioridad de auditoría)
+## Bug conocido — CORREGIDO 2026-06-10
 
-En `reports/data/metrics_OOS.csv` del árbol actual, ARIMA supera a RW por márgenes
-irreales en T≥5 (T=20: RMSE 0.0167 vs 0.044, MDA 0.89, DM p≈0.000). Para retornos
-acumulados eso es atípico y sugiere FUGA DE INFORMACIÓN en el pronóstico multi-paso
-(posible re-anclaje con valores reales dentro del horizonte). Auditar
-`src/stages/11_train_arima.py` y `src/stages/20_evaluate_stats.py`: el pronóstico de
-y_t(h) debe usar SOLO información disponible hasta t. Referencia de cordura: en la tesis,
-todos los modelos tienen RMSE≈0.011 en T=1 y arimax≈0.039 en T=20, con diferencias
-estrechas entre familias.
+La fuga estaba en `11_train_arima.py`: modelaba la serie solapada `Target_Ret_h{h}`
+con predicción one-step-ahead (`apply().predict()`), de modo que y_{t−1}(h) —que
+contiene precios hasta t+h−1— entraba como regresor. Fix: enfoque iterado sobre
+retornos diarios (`predict_oos_iterated`: fit con datos ≤ t, `forecast(h)` y suma),
+re-fit mensual + apply diario, orden [1,0,1] sobre ret_1d. Además: purga de frontera
+train/OOS en `12_train_lstm.py` (targets de train que invadían el OOS).
+Métricas post-fix DENTRO de la cordura de la tesis (T=1 RMSE≈0.0113 todos;
+T=20: RW 0.0440, ARIMA 0.0403/MDA 0.742, LSTM 0.0391; DM ARIMA vs RW no
+significativo). Gate permanente: `tests/test_no_leakage.py` (corrupción del futuro
+⇒ ŷ_t(h) no cambia; correr con `python tests/test_no_leakage.py`, pytest no está
+en el venv). ⚠️ Las figuras de `reports/figs` aún son de la corrida buggy del
+29-12-2025; regenerar antes de usarlas.
 
 ## Especificación canónica (fuente de la verdad)
 

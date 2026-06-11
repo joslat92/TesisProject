@@ -76,7 +76,7 @@ class ContractValidator:
         # Chequeo "fuzzy" del modelo (ej. LSTM_Plain vs LSTM)
         # Esto depende de cuan estricto quieras ser con los nombres exactos
         
-        print(f"✅ Validado: {filename} ({len(df)} filas, h={current_h})")
+        print(f"[OK] Validado: {filename} ({len(df)} filas, h={current_h})")
         return True
 
     def validate_all_outputs(self):
@@ -87,27 +87,27 @@ class ContractValidator:
         oos_dir = self.cfg['paths']['preds_oos_dir']
         files_oos = glob.glob(os.path.join(oos_dir, "*.csv"))
         if not files_oos:
-            print("⚠️ [Warn] No hay archivos OOS para validar.")
-        
+            print("[Warn] No hay archivos OOS para validar.")
+
         for f in files_oos:
             try:
                 self.validate_prediction_file(f, context="OOS")
             except Exception as e:
-                print(f"❌ ERROR en {os.path.basename(f)}: {str(e)}")
+                print(f"[ERROR] en {os.path.basename(f)}: {str(e)}")
                 # Fail-fast: lanzar error para detener pipeline si es necesario
-                # raise e 
+                # raise e
 
         # 2. WF
         wf_dir = self.cfg['paths']['preds_wf_dir']
         files_wf = glob.glob(os.path.join(wf_dir, "*.csv"))
         if not files_wf:
-             print("⚠️ [Warn] No hay archivos WF para validar.")
+             print("[Warn] No hay archivos WF para validar.")
 
         for f in files_wf:
             try:
                 self.validate_prediction_file(f, context="WF")
             except Exception as e:
-                print(f"❌ ERROR en {os.path.basename(f)}: {str(e)}")
+                print(f"[ERROR] en {os.path.basename(f)}: {str(e)}")
 
         print("--- VALIDACIÓN COMPLETADA ---\n")
 
