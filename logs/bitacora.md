@@ -1,5 +1,52 @@
 # Bitácora del proyecto
 
+## 2026-06-10 (sesión 4) — Fase 3: análisis multi-semilla LSTM (OOS) ✔
+
+### Qué se hizo
+- Nuevo `src/stages/15_multiseed_lstm.py`: 3 variantes LSTM × 4 horizontes ×
+  10 semillas (42, 123, 7, 2024, 31, 99, 555, 1000, 8, 77) = 120
+  entrenamientos OOS con la rutina anti-fuga del stage 12 (scaler train-only,
+  purga, early stopping con embargo). Separado en `run_trainings` /
+  `run_analysis` (`--analysis-only` permite re-analizar sin re-entrenar; útil:
+  el primer intento cayó en el merge del DM por dtype de Date — datetime del
+  parquet vs string del CSV — sin perder los 120 entrenamientos).
+- **Decisión documentada: el WF queda FUERA del multi-semilla.** Re-entrenar
+  por bloque costaría 1.440 entrenamientos (12×) para responder la misma
+  pregunta (sensibilidad a inicialización), que el OOS multi-semilla ya
+  contesta; el WF canónico (seed 42) cubre la estabilidad temporal.
+- Salidas: outputs/preds/MULTISEED/ (120 archivos),
+  reports/data/multiseed_metrics_by_seed.csv, multiseed_summary.csv,
+  multiseed_dm_T20_LSTM_FULL.csv, reports/figs/Fig_multiseed_boxplot.png.
+
+### Resultados (RMSE mean ± std, 10 semillas)
+| Variante | T=1 | T=5 | T=10 | T=20 |
+|---|---|---|---|---|
+| LSTM | .01090±.00005 | .02430±.00013 | .03378±.00020 | .04184±.00090 |
+| LSTM_SENT | .01104±.00009 | .02461±.00035 | .03412±.00034 | .04257±.00201 |
+| LSTM_FULL | .01096±.00010 | .02423±.00037 | .03430±.00041 | .04200±.00145 |
+- La variabilidad por semilla crece con h (std ~0.5% del RMSE en T=1, ~3-5%
+  en T=20). RW de referencia: .01132 / .02472 / .03457 / .04396.
+- En T=1 las tres variantes baten a RW con TODAS las semillas; en T=20 las
+  medianas quedan bajo RW pero el rango cruza la línea (max LSTM_SENT .04627,
+  max LSTM_FULL .04416 vs RW .04396).
+
+### DM vs RW — LSTM_FULL T=20 (criterio de lectura)
+- p por semilla: 0.047, 0.094, 0.006, 0.063, 0.037, 0.077, 0.115, 0.064,
+  0.044, 0.061. **Mediana p = 0.0616; 4/10 semillas con p<0.05.**
+- **Veredicto según criterio preacordado: SENSIBLE A INICIALIZACIÓN** (la
+  mediana no baja de 0.05). Se reporta así en el documento.
+- Matices a favor: el DM_Stat es POSITIVO en las 10 semillas (1.58–2.80,
+  dirección unánime pro-LSTM_FULL), el RMSE medio (.0420) queda bajo RW
+  (.0440), y el **ensemble de las 10 semillas logra p=0.0489 con RMSE .0418**
+  — borderline significativo. Lectura honesta para la tesis: ventaja
+  direccional consistente pero significancia frágil al 5% por semilla
+  individual; el promedio de predicciones la recupera por poco.
+
+### Qué sigue
+- Incorporar multiseed_summary + boxplot a la discusión del documento
+  (sección de robustez), citando la decisión de excluir WF.
+- RC1 sigue vigente; este análisis lo complementa, no lo reemplaza.
+
 ## 2026-06-10 (sesión 3) — ★ RC1 DE RESULTADOS ★ (prioridades 4 y 6) ✔
 
 **Este punto queda marcado como RC1 (release candidate 1) de resultados: el
