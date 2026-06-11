@@ -79,19 +79,22 @@ en el venv). ⚠️ Las figuras de `reports/figs` aún son de la corrida buggy d
 2. ✔ (2026-06-09) Historial explorado; worktree `../TesisProject-legacy` en e7ac2d3.
    Hallazgo: el código multi-horizonte de la tesis NO está en el repo (ver Historia #3).
 3. ✔ (2026-06-10) Bug de fuga ARIMA corregido (ver "Bug conocido — CORREGIDO").
-4. Implementar el validador de contrato (contrato.docx §11) como gate fail-fast del
-   pipeline (hoy los errores solo se imprimen); integrar tests/test_no_leakage.py y
-   revisar MDA(RW)=0 (artefacto de sign(0) en 20_evaluate_stats).
+4. ✔ (2026-06-10) Gate fail-fast: contract.py levanta RuntimeError ante violaciones
+   y `run_full_gate()` (estructura + contrato + pytest anti-fuga) corre al inicio de
+   20_evaluate_stats. pytest instalado. MDA(RW)=0 documentado como convención
+   (sign(0) no puntúa); pendiente decidir presentación en el texto.
 5. ✔ (2026-06-10) Stages ARIMAX/SARIMAX (13_train_sarimax.py, iterado, exógenas
    congeladas en t, gate estacional KW p<0.10 → sin m=5) y variantes LSTM_SENT/
    LSTM_FULL con early stopping + embargo. OOS dentro del corredor de cordura;
    T=20 queda ~7-11% sobre las referencias de la tesis (esperable: especificación
    exógena/tuning distintos) — contrastar cuando aparezca el código original.
-6. Re-correr WF completo (14_walkforward aún no cubre los modelos nuevos),
-   regenerar figuras (las de reports/figs siguen siendo de la corrida buggy) y
-   validar contra las tablas de la tesis.
-7. Seguir buscando fuera del repo el código multi-horizonte original (tablas del
-   doc "Numeros normales").
+6. ✔ (2026-06-10) ★RC1 de resultados★: WF 2024 completo (12 bloques × 7 modelos,
+   336 archivos, re-fit/scalers por bloque), DM vs RW y vs SARIMAX, MZ con p(β=1),
+   tablas consolidadas en reports/data y 25 figuras canónicas en reports/figs
+   (las buggy del 29-12 en _archive_corrida_buggy_20251229/). Ver bitácora.
+7. Validar RC1 con el director y decidir cierre de números para el documento.
+8. Seguir buscando fuera del repo el código multi-horizonte original (tablas del
+   doc "Numeros normales"). Bloque opcional de robustez ene–abr 2025 reservado.
 
 ## Datos
 

@@ -38,7 +38,7 @@ def build_exog_lags(exog_raw, lags_cfg):
     return pd.DataFrame(out, index=exog_raw.index)
 
 def predict_oos_iterated_exog(y_ret, exog_raw, oos_dates, h, order,
-                              seasonal_order, lags_cfg, refit="M"):
+                              seasonal_order, lags_cfg, refit="M", fit_upto=None):
     """
     Pronóstico iterado anti-fuga con exógenas para y_hat_t(h) = sum(ret_{t+1..t+h}).
 
@@ -52,6 +52,10 @@ def predict_oos_iterated_exog(y_ret, exog_raw, oos_dates, h, order,
 
     Esquema expanding con re-fit mensual + apply() diario (misma justificación
     que en 11_train_arima: re-fit diario ~30x más caro, parámetros estables).
+
+    fit_upto (walk-forward): si se indica, los parámetros se estiman una sola
+    vez con datos hasta esa fecha (día previo al bloque; contrato: HPs solo
+    con IS o bloques previos) y cada t del bloque solo re-filtra.
 
     exog_raw debe venir en el índice CRUDO completo (anterior al recorte por
     lags) para que los primeros rezagos del historial existan.
@@ -75,13 +79,20 @@ def predict_oos_iterated_exog(y_ret, exog_raw, oos_dates, h, order,
         X_hist = X.loc[y_t.index]
         X_fut = X.loc[future_idx]
 
-        month = (t.year, t.month) if refit == "M" else None
-        if res is None or month != fitted_month:
-            res = ARIMA(y_t, exog=X_hist, order=order,
-                        seasonal_order=seasonal_order).fit()
-            fitted_month = month
-        else:
+        if fit_upto is not None:
+            if res is None:
+                y_fit = y_ret.loc[:fit_upto]
+                res = ARIMA(y_fit, exog=X.loc[y_fit.index], order=order,
+                            seasonal_order=seasonal_order).fit()
             res = res.apply(y_t, exog=X_hist)
+        else:
+            month = (t.year, t.month) if refit == "M" else None
+            if res is None or month != fitted_month:
+                res = ARIMA(y_t, exog=X_hist, order=order,
+                            seasonal_order=seasonal_order).fit()
+                fitted_month = month
+            else:
+                res = res.apply(y_t, exog=X_hist)
         preds.append(float(res.forecast(steps=h, exog=X_fut).sum()))
     return np.array(preds)
 

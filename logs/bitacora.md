@@ -1,5 +1,78 @@
 # Bitácora del proyecto
 
+## 2026-06-10 (sesión 3) — ★ RC1 DE RESULTADOS ★ (prioridades 4 y 6) ✔
+
+**Este punto queda marcado como RC1 (release candidate 1) de resultados: el
+conjunto OOS 2024 + walk-forward 12 bloques de los 7 modelos efectivos es el
+candidato a entrar en el documento final de la tesis**, generado con pipeline
+sin fuga (gate automático), contrato validado fail-fast y figuras canónicas.
+Etiqueta de referencia: commit de esta sesión en `reestructura-dic2025`.
+
+### 1. Gate fail-fast del pipeline (prioridad 4)
+- `pytest` y `openpyxl` instalados en el venv (requirements.txt actualizado).
+- `src/core/contract.py`: `validate_all_outputs(fail_fast=True)` ahora LEVANTA
+  RuntimeError con la lista de violaciones (antes solo imprimía); valida
+  también unicidad de `block` en WF. Nuevo `run_leakage_gate()` ejecuta
+  `pytest tests/test_no_leakage.py` y detiene el pipeline si falla. 
+  `run_full_gate()` = estructura + contrato + anti-fuga; es el gate que corre
+  20_evaluate_stats ANTES de calcular nada, y el CLI
+  `python -m src.core.contract` / `python src/core/contract.py`.
+- Gate de esta corrida: 364 archivos validados (28 OOS + 336 WF), anti-fuga
+  3/3 PASSED.
+
+### 2. Walk-forward 2024 — 12 bloques × 7 modelos (prioridad 6)
+- `14_walkforward.py` reescrito por completo (el anterior era pre-contrato:
+  SARIMAX(2,1,3) sobre niveles a dataset inexistente).
+- Por bloque b (mes de 2024): parámetros/scalers SOLO con datos < inicio del
+  bloque (`fit_upto` nuevo en predict_oos_iterated[_exog]; el LSTM se
+  re-entrena por bloque con scaler del bloque, purga y embargo). Dentro del
+  bloque los clásicos re-filtran diariamente (apply) sin re-estimar.
+- Salida contrato: preds_T{h}_{model}_block{b}.csv (336 archivos).
+- Gate estacional (IS): p=0.3016 → sin m=5; SARIMAX ≡ ARIMAX también en WF.
+
+### 3. Tablas consolidadas (reports/data/)
+- metrics_OOS.csv (7 modelos × 4 h) — sin cambios vs sesión 2.
+- metrics_WF_blocks.csv (336 filas: por bloque) y metrics_WF.csv (WF_mean).
+- tbl_DM_OOS.csv (DM completo vs RW Y vs SARIMAX, HAC L=h−1) y dm_summary.csv
+  (pivot compacto de p-values). ARIMAX vs SARIMAX da p=1.0 (idénticos, gate
+  off — el caso degenerado se maneja con p=1, sin abortar).
+- tbl_MZ_core.csv y mz_summary_OOS.csv (MZ en niveles, ahora con p(β=1) HAC).
+
+### 4. Resultados clave RC1
+RMSE WF_mean (across 12 bloques):
+| T | RW | ARIMA | ARIMAX/SARIMAX | LSTM | LSTM_SENT | LSTM_FULL |
+|---|------|-------|------|------|------|------|
+| 1 | .01098 | .01104 | .01096 | .01046 | .01050 | .01054 |
+| 5 | .02354 | .02279 | .02314 | .02244 | .02263 | .02246 |
+| 10 | .03239 | .03048 | .03136 | .03107 | .03215 | .03212 |
+| 20 | .04165 | .03674 | .03984 | .03863 | .03777 | .03842 |
+- Coherente con OOS: mismas familias, mismos órdenes de magnitud, ARIMA lidera
+  T≥10, las LSTM lideran T≤5. El heatmap WF muestra el patrón esperable:
+  bloques 8–9 (ago–sep 2024) castigan a las LSTM (+70–90% dRMSE), bloque 4
+  las favorece (−70%).
+- DM OOS vs RW (p): T=20 → LSTM_SENT 0.030, LSTM_FULL 0.047, LSTM 0.059.
+  DM OOS vs SARIMAX: LSTM_SENT significativo en T=5 (p=0.036).
+- MZ: p(β=1) ahora reportado por modelo/horizonte en tbl_MZ_core.
+
+### 5. Figuras canónicas (guía de replicación, paso 10) — 25 archivos
+- Por h ∈ {1,5,10,20}: Fig_T{h}_bars_vs_RW, Fig_T{h}_volcano_vs_RW,
+  Fig_T{h}_calibracion_scatter, Fig_T{h}_WF_heatmap_vs_RW,
+  Fig_T{h}_cumloss_vs_RW, Fig_T{h}_dumbbell_dRMSE; global: Fig_bump_ranking.
+- Las 7 figuras de la corrida buggy del 29-12-2025 quedaron archivadas en
+  `reports/figs/_archive_corrida_buggy_20251229/` (no mezclar con RC1).
+- 30_make_figures.py reescrito para generarlas todas desde las tablas
+  consolidadas (caída graciosa si falta una fuente).
+
+### Pendientes post-RC1
+- Validar RC1 con el director; decidir si las desviaciones vs tablas de la
+  tesis (T=20 ~7-11% en exógenos, ver sesión 2) requieren recuperar la
+  especificación original o re-narrar con estos números.
+- Bloque opcional de robustez ene–abr 2025 (datos reservados).
+- 05_features.py y 30_reports.py/23_final_comparison.py siguen siendo código
+  muerto/pre-contrato; decidir limpieza.
+- MDA(RW)=0 sigue siendo artefacto de sign(0) (RW predice retorno 0):
+  documentar la convención en el texto o excluir RW de la columna MDA.
+
 ## 2026-06-10 (sesión 2) — SARIMAX/ARIMAX + variantes LSTM (prioridad 5) ✔
 
 ### Qué se hizo

@@ -14,7 +14,7 @@ def load_config():
     with open("config.yaml", "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
-def predict_oos_iterated(y_ret, oos_dates, h, order, refit="M"):
+def predict_oos_iterated(y_ret, oos_dates, h, order, refit="M", fit_upto=None):
     """
     Pronóstico iterado anti-fuga de ŷ_t(h) = sum(ret_{t+1..t+h}).
 
@@ -26,18 +26,27 @@ def predict_oos_iterated(y_ret, oos_dates, h, order, refit="M"):
     (re-fit diario cuesta ~30x más y los parámetros ARMA de retornos diarios
     son estables intra-mes); entre re-fits, res.apply() re-filtra con los
     parámetros fijos usando estrictamente la muestra hasta t.
+
+    fit_upto (walk-forward): si se indica, los PARÁMETROS se estiman una sola
+    vez con y_ret hasta esa fecha (p. ej. el día previo al bloque, contrato:
+    HPs solo con IS o bloques previos) y cada t del bloque solo re-filtra.
     """
     preds = []
     res = None
     fitted_month = None
     for t in oos_dates:
         y_t = y_ret.loc[:t]
-        month = (t.year, t.month) if refit == "M" else None
-        if res is None or month != fitted_month:
-            res = ARIMA(y_t, order=order).fit()
-            fitted_month = month
-        else:
+        if fit_upto is not None:
+            if res is None:
+                res = ARIMA(y_ret.loc[:fit_upto], order=order).fit()
             res = res.apply(y_t)
+        else:
+            month = (t.year, t.month) if refit == "M" else None
+            if res is None or month != fitted_month:
+                res = ARIMA(y_t, order=order).fit()
+                fitted_month = month
+            else:
+                res = res.apply(y_t)
         preds.append(float(res.forecast(steps=h).sum()))
     return np.array(preds)
 

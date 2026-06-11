@@ -1,7 +1,9 @@
 import pandas as pd
 import yaml
 import os
+import sys
 import glob
+import subprocess
 from pathlib import Path
 
 
@@ -49,6 +51,8 @@ class ContractValidator:
             missing_wf = self.wf_extra - cols
             if missing_wf:
                  raise ValueError(f"[Contract Fail] WF {filepath} le faltan columnas extra: {missing_wf}")
+            if df['block'].nunique() != 1:
+                 raise ValueError(f"[Contract Fail] WF {filepath} mezcla bloques: {df['block'].unique()}")
 
         # 2. Validar Tipos y Nulos
         # No permitimos NaNs en predicciones o targets (deben estar limpios o recortados)
@@ -79,10 +83,15 @@ class ContractValidator:
         print(f"[OK] Validado: {filename} ({len(df)} filas, h={current_h})")
         return True
 
-    def validate_all_outputs(self):
-        """Barre todos los outputs y valida integridad masiva."""
+    def validate_all_outputs(self, fail_fast=True):
+        """
+        Barre todos los outputs y valida integridad masiva.
+        fail_fast=True (gate del pipeline): cualquier violación de contrato
+        levanta RuntimeError con la lista completa de errores.
+        """
         print("\n--- INICIANDO VALIDACIÓN DE CONTRATO MASIVA ---")
-        
+        errors = []
+
         # 1. OOS
         oos_dir = self.cfg['paths']['preds_oos_dir']
         files_oos = glob.glob(os.path.join(oos_dir, "*.csv"))
@@ -93,9 +102,8 @@ class ContractValidator:
             try:
                 self.validate_prediction_file(f, context="OOS")
             except Exception as e:
+                errors.append(f"{os.path.basename(f)}: {str(e)}")
                 print(f"[ERROR] en {os.path.basename(f)}: {str(e)}")
-                # Fail-fast: lanzar error para detener pipeline si es necesario
-                # raise e
 
         # 2. WF
         wf_dir = self.cfg['paths']['preds_wf_dir']
@@ -107,12 +115,42 @@ class ContractValidator:
             try:
                 self.validate_prediction_file(f, context="WF")
             except Exception as e:
+                errors.append(f"{os.path.basename(f)}: {str(e)}")
                 print(f"[ERROR] en {os.path.basename(f)}: {str(e)}")
 
+        if errors and fail_fast:
+            raise RuntimeError(
+                f"[Contract GATE] {len(errors)} archivo(s) violan el contrato:\n"
+                + "\n".join(errors)
+            )
         print("--- VALIDACIÓN COMPLETADA ---\n")
+
+    def run_leakage_gate(self):
+        """
+        Gate anti-fuga (contrato §8): ejecuta tests/test_no_leakage.py con
+        pytest y detiene el pipeline si algún test falla.
+        """
+        print("--- GATE ANTI-FUGA (tests/test_no_leakage.py) ---")
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests/test_no_leakage.py", "-q"],
+            capture_output=True, text=True
+        )
+        tail = (result.stdout or "").strip().splitlines()
+        for line in tail[-5:]:
+            print(f"   {line}")
+        if result.returncode != 0:
+            raise RuntimeError(
+                "[Leakage GATE] El test anti-fuga FALLÓ. Pipeline detenido.\n"
+                + (result.stdout or "") + (result.stderr or "")
+            )
+        print("--- GATE ANTI-FUGA: OK ---\n")
+
+    def run_full_gate(self):
+        """Gate completo del pipeline: estructura + contrato + anti-fuga."""
+        self.validate_structure()
+        self.validate_all_outputs(fail_fast=True)
+        self.run_leakage_gate()
 
 # Uso rápido desde línea de comandos
 if __name__ == "__main__":
-    val = ContractValidator()
-    val.validate_structure()
-    val.validate_all_outputs()
+    ContractValidator().run_full_gate()
