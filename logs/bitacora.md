@@ -1,5 +1,70 @@
 # Bitácora del proyecto
 
+## 2026-06-10 (sesión 2) — SARIMAX/ARIMAX + variantes LSTM (prioridad 5) ✔
+
+### Qué se hizo
+1. **`src/stages/13_train_sarimax.py` (nuevo)**: ARIMAX y SARIMAX con el mismo
+   enfoque iterado anti-fuga del ARIMA corregido (`predict_oos_iterated_exog`).
+   - Exógenas (VIX, Sentiment GDELT) crudas desde `data/raw/data.csv`, entran
+     REZAGADAS con los lags del config (`features.exog`: 1,2,5,10,15).
+   - Pasos futuros del forecast: cada exógena CONGELADA en su último valor
+     conocido en t (convención random-walk, documentada en docstring). Los lag-k
+     que caen ≤ t usan el valor real ya observado.
+   - Expanding, re-fit mensual + apply diario (igual que stage 11).
+   - **Gating estacional del contrato**: m=5 solo con evidencia p<0.10.
+     Test Kruskal–Wallis de efecto día-de-semana sobre ret_1d del IS:
+     p=0.3016 → SIN términos estacionales en los 4 horizontes. En consecuencia
+     SARIMAX ≡ ARIMAX en esta corrida (ambos se emiten por contrato; la
+     distinción se activará si el gate cambia con otros datos/splits).
+2. **`src/stages/12_train_lstm.py` reescrito**: variantes desde config
+   (LSTM=ret_1d; LSTM_SENT=+Sentiment_GDELT_lag1; LSTM_FULL=+VIX_Close_lag1),
+   HPs canónicos de la tesis (hidden 64, dropout 0.2, batch 64, lr 0.001,
+   epochs 30, seed 42) y **early stopping**: val = último 20% del train
+   (cronológico) con **embargo de h muestras** entre train y val para que los
+   targets solapados no crucen el corte; restaura mejores pesos; paciencia 5.
+   Se mantiene la purga de frontera train/OOS de la sesión 1.
+3. **`config.yaml`**: active_models += ARIMAX/LSTM_SENT/LSTM_FULL; HPs LSTM
+   canónicos; variantes redefinidas sobre columnas reales del parquet
+   (exógenas lag1, regla "siempre rezagadas").
+4. **`tests/test_no_leakage.py` extendido**: nuevo test SARIMAX/ARIMAX —
+   corromper SOLO las exógenas posteriores a t, y también retornos+exógenas,
+   debe dejar ŷ_t(h) idéntico. PASA (h=1 y h=20).
+5. Re-corrida OOS completa (7 modelos × 4 horizontes, 28 archivos validados)
+   + 20_evaluate_stats.
+
+### Resultados vs criterio de aceptación
+- **T=1: CUMPLIDO** — todos en ≈0.011 (0.01089–0.01139).
+- **T=20 (referencias tesis: sarimax≈0.0397; lstm_sentvix≈0.0388, DM p≈0.009)**:
+  - SARIMAX/ARIMAX: RMSE 0.04249 (~+7% sobre la referencia), MDA 0.659.
+  - LSTM_FULL: RMSE 0.04325 (~+11%), DM p=0.0469 (significativo, mismo signo);
+    LSTM_SENT: 0.04256, p=0.0298. LSTM plain: 0.04206, p=0.059.
+  - Todos dentro del corredor de cordura (mejores que RW 0.04396, sin aplastarlo;
+    sin firma de fuga — la fuga infla, no degrada).
+  - Desviaciones esperables de una reimplementación: (a) el SARIMAX de la tesis
+    probablemente modelaba el horizonte directo con otra especificación de
+    exógenas, no el agregado iterado de retornos diarios con exógenas congeladas;
+    (b) las variantes LSTM de la tesis estaban TUNED por variante, aquí van con
+    HPs canónicos fijos; (c) sensibilidad a semilla única (seed 42).
+  - PENDIENTE: contrastar especificación exacta del SARIMAX de la tesis
+    (lags exactos, ¿exógena contemporánea rezagada?, ¿estimación directa por
+    horizonte?) cuando aparezca el código multi-horizonte original.
+
+### Métricas completas (RMSE OOS)
+| T | RW | ARIMA | ARIMAX/SARIMAX | LSTM | LSTM_SENT | LSTM_FULL |
+|---|------|-------|----------------|------|-----------|-----------|
+| 1 | .01132 | .01139 | .01127 | .01092 | .01112 | .01089 |
+| 5 | .02472 | .02422 | .02436 | .02425 | .02408 | .02484 |
+| 10 | .03457 | .03337 | .03360 | .03392 | .03439 | .03429 |
+| 20 | .04396 | .04032 | .04249 | .04206 | .04256 | .04325 |
+
+### Qué sigue
+- Prioridad 4: validador de contrato como gate fail-fast (incluir test anti-fuga
+  y revisar MDA(RW)=0 por sign(0)).
+- Prioridad 6: walk-forward 12 bloques para los 7 modelos (14_walkforward está
+  para RW/ARIMA/LSTM viejos; actualizarlo) y regenerar figuras (las actuales
+  siguen siendo de la corrida buggy del 29-12).
+- Buscar el código multi-horizonte original para cerrar la comparación SARIMAX.
+
 ## 2026-06-10 — Fix de la fuga en ARIMA multi-paso (prioridad 3) ✔
 
 ### Qué se hizo

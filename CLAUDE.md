@@ -75,15 +75,23 @@ en el venv). ⚠️ Las figuras de `reports/figs` aún son de la corrida buggy d
 
 ## Prioridades inmediatas (en orden)
 
-1. Crear `.gitignore` (.venv/, venv/, __pycache__/, *.pyc) y commitear el árbol actual
-   en la rama `reestructura-dic2025`; push al remoto.
-2. Explorar el historial de git: localizar el código que generó las corridas SARIMAX y
-   LSTM con exógenas de la tesis (buscar en commits previos a e7ac2d3). Extraerlo a una
-   carpeta de referencia (`legacy/`) usando git worktree o checkout selectivo, sin tocar main.
-3. Auditar y corregir el bug de fuga en ARIMA multi-paso.
-4. Implementar el validador de contrato (contrato.docx §11) como gate del pipeline.
-5. Completar stages SARIMAX y variantes LSTM con exógenas en la estructura nueva.
-6. Re-correr OOS + WF completo y validar contra las tablas de la tesis.
+1. ✔ (2026-06-09) .gitignore + commit del árbol en `reestructura-dic2025` + push.
+2. ✔ (2026-06-09) Historial explorado; worktree `../TesisProject-legacy` en e7ac2d3.
+   Hallazgo: el código multi-horizonte de la tesis NO está en el repo (ver Historia #3).
+3. ✔ (2026-06-10) Bug de fuga ARIMA corregido (ver "Bug conocido — CORREGIDO").
+4. Implementar el validador de contrato (contrato.docx §11) como gate fail-fast del
+   pipeline (hoy los errores solo se imprimen); integrar tests/test_no_leakage.py y
+   revisar MDA(RW)=0 (artefacto de sign(0) en 20_evaluate_stats).
+5. ✔ (2026-06-10) Stages ARIMAX/SARIMAX (13_train_sarimax.py, iterado, exógenas
+   congeladas en t, gate estacional KW p<0.10 → sin m=5) y variantes LSTM_SENT/
+   LSTM_FULL con early stopping + embargo. OOS dentro del corredor de cordura;
+   T=20 queda ~7-11% sobre las referencias de la tesis (esperable: especificación
+   exógena/tuning distintos) — contrastar cuando aparezca el código original.
+6. Re-correr WF completo (14_walkforward aún no cubre los modelos nuevos),
+   regenerar figuras (las de reports/figs siguen siendo de la corrida buggy) y
+   validar contra las tablas de la tesis.
+7. Seguir buscando fuera del repo el código multi-horizonte original (tablas del
+   doc "Numeros normales").
 
 ## Datos
 

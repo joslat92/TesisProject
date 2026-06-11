@@ -54,6 +54,56 @@ def test_arima_prediction_ignores_future():
             f"({base} vs {corrupt})"
         )
 
+def test_sarimax_prediction_ignores_future():
+    """
+    Para t en OOS, corromper retornos Y exógenas posteriores a t no debe
+    mover y_hat_t(h) de ARIMAX/SARIMAX (las exógenas futuras del forecast
+    deben venir congeladas en su valor en t, nunca de los datos reales).
+    """
+    os.chdir(ROOT)
+    stage = _load_stage("13_train_sarimax.py", "stage_13_train_sarimax")
+
+    import yaml
+    with open(ROOT / "config.yaml", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    lags_cfg = cfg["features"]["exog"]
+
+    raw = pd.read_csv(ROOT / cfg["data"]["raw_source"], parse_dates=["Date"]).set_index("Date")
+    exog_raw = raw[list(lags_cfg.keys())]
+
+    t = pd.Timestamp("2024-06-14")
+    rng = np.random.default_rng(321)
+
+    for h in [1, 20]:
+        y = _load_returns(h)
+        dates = pd.DatetimeIndex([t])
+
+        base = stage.predict_oos_iterated_exog(
+            y, exog_raw, dates, h, (1, 0, 1), (0, 0, 0, 0), lags_cfg
+        )
+
+        # 1) Corromper SOLO exógenas posteriores a t
+        exog_corrupt = exog_raw.copy()
+        future_x = exog_corrupt.index > t
+        exog_corrupt.loc[future_x] = rng.normal(50, 20, (int(future_x.sum()), exog_raw.shape[1]))
+        only_exog = stage.predict_oos_iterated_exog(
+            y, exog_corrupt, dates, h, (1, 0, 1), (0, 0, 0, 0), lags_cfg
+        )
+        assert np.array_equal(base, only_exog), (
+            f"FUGA DE EXOGENAS en h={h}: y_hat_t cambió al alterar VIX/sentimiento > t"
+        )
+
+        # 2) Corromper también los retornos posteriores a t
+        y_corrupt = y.copy()
+        future_y = y_corrupt.index > t
+        y_corrupt.loc[future_y] = rng.normal(0.0, 0.05, int(future_y.sum()))
+        both = stage.predict_oos_iterated_exog(
+            y_corrupt, exog_corrupt, dates, h, (1, 0, 1), (0, 0, 0, 0), lags_cfg
+        )
+        assert np.array_equal(base, both), (
+            f"FUGA en h={h}: y_hat_t cambió al alterar retornos y exógenas > t"
+        )
+
 def test_rw_preds_are_zero_return():
     """RW del contrato: y_hat_t(h) = 0 en retornos, nivel = P_t."""
     for h in [1, 5, 10, 20]:
@@ -66,5 +116,6 @@ def test_rw_preds_are_zero_return():
 
 if __name__ == "__main__":
     test_arima_prediction_ignores_future()
+    test_sarimax_prediction_ignores_future()
     test_rw_preds_are_zero_return()
-    print("OK: sin fuga detectada (ARIMA iterado + RW)")
+    print("OK: sin fuga detectada (ARIMA + ARIMAX/SARIMAX + RW)")

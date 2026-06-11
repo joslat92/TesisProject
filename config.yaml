@@ -29,11 +29,14 @@ features:
 
 # --- 3. MODELOS Y PARÁMETROS (¡Sección Recuperada!) ---
 models:
-  active_models: 
+  active_models:
     - RW
     - ARIMA
+    - ARIMAX
     - SARIMAX
     - LSTM
+    - LSTM_SENT
+    - LSTM_FULL
 
   params:
     rw:
@@ -49,15 +52,22 @@ models:
       seasonal_order: [0, 1, 0, 5]
       
     lstm:
+      # HPs canónicos de la tesis: window=40, hidden=64, dropout=0.2,
+      # Adam lr=0.001, epochs=30, batch=64, seed=42, early-stopping val 20%.
       seq_len: 40
-      hidden_dim: 50
+      hidden_dim: 64
+      dropout: 0.2
+      lr: 0.001
       epochs: 30
-      batch_size: 32
+      batch_size: 64
       patience: 5
+      val_frac: 0.20
+      # Exógenas SIEMPRE rezagadas (lag1); la ventana de 40 días ya aporta
+      # la historia reciente de cada canal.
       variants:
-        LSTM_Plain: ["Target_Price"]
-        LSTM_Sent:  ["Target_Price", "Sentiment_GDELT"]
-        LSTM_Full:  ["Target_Price", "Sentiment_GDELT", "VIX_Close"]
+        LSTM:      ["ret_1d"]
+        LSTM_SENT: ["ret_1d", "Sentiment_GDELT_lag1"]
+        LSTM_FULL: ["ret_1d", "Sentiment_GDELT_lag1", "VIX_Close_lag1"]
 
 # --- 4. RUTAS (PATHS) ---
 paths:
