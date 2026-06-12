@@ -1,0 +1,100 @@
+# config_robustez2025.yaml — BLOQUE DE ROBUSTEZ 2025 (decisión D3)
+# Derivado de config.yaml canónico. NO reemplaza al estudio principal:
+# train extendido hasta 2024-12-31 y OOS ene-abr 2025 (incluye el shock de
+# volatilidad de abril). Los datos 2025 no tocan el estudio principal.
+# Nota: para h>1 el OOS efectivo termina h días hábiles antes de 2025-04-22
+# (los últimos targets no existen en los datos).
+project:
+  name: "Tesis MMACC: Sentiment & VIX vs Market Efficiency — ROBUSTEZ 2025"
+  version: "2.1.0-rob2025"
+  seed: 42
+
+data:
+  raw_source: "data/raw/data.csv"
+  freq: "B"
+  target_col: "Target_Price"
+
+  splits:
+    train_end: "2024-12-31"
+    oos_start: "2025-01-02"
+    oos_end:   "2025-04-22"
+    wf_year: 2025      # no se usa: el bloque de robustez no corre WF
+    wf_blocks: 0
+
+features:
+  horizons: [1, 5, 10, 20]
+
+  exog:
+    Sentiment_GDELT: [1, 2, 5, 10, 15]
+    VIX_Close: [1, 2, 5, 10, 15]
+
+  target_transform: "log_return_accumulated"
+
+models:
+  active_models:
+    - RW
+    - ARIMA
+    - ARIMAX
+    - SARIMAX
+    - LSTM
+    - LSTM_SENT
+    - LSTM_FULL
+
+  params:
+    rw:
+      strategy: "zero_return"
+
+    arima:
+      # Igual que el canónico: [1,0,1] sobre ret_1d (= ARIMA(1,1,1) en logP).
+      order: [1, 0, 1]
+
+    sarimax:
+      order: [1, 0, 1]
+      seasonal_order: [0, 1, 0, 5]
+
+    lstm:
+      # HPs canónicos (D2); semilla única 42 para el bloque de robustez.
+      seq_len: 40
+      hidden_dim: 64
+      dropout: 0.2
+      lr: 0.001
+      epochs: 30
+      batch_size: 64
+      patience: 5
+      val_frac: 0.20
+      variants:
+        LSTM:      ["ret_1d"]
+        LSTM_SENT: ["ret_1d", "Sentiment_GDELT_lag1"]
+        LSTM_FULL: ["ret_1d", "Sentiment_GDELT_lag1", "VIX_Close_lag1"]
+
+paths:
+  splits_json: "data/processed/splits.json"
+  features_parquet_pattern: "data/processed/features_T{h}.parquet"
+  metadata_snapshot: "reports/data/metadata_snapshot.csv"
+
+  # Salidas SEPARADAS del estudio principal:
+  preds_oos_dir: "outputs/preds/OOS_2025"
+  preds_wf_dir:  "outputs/preds/WF_2025"
+  figures_dir:   "reports/figs"
+
+  metrics_oos: "reports/data/metrics_OOS_2025.csv"
+  metrics_wf:  "reports/data/metrics_WF_2025.csv"
+  dm_results:  "reports/data/tbl_DM_2025.csv"
+  mz_results:  "reports/data/mz_summary_OOS_2025.csv"
+
+contract:
+  naming:
+    oos: "preds_T{h}_{model}.csv"
+    wf:  "preds_T{h}_{model}_block{b}.csv"
+
+  columns_required:
+    - Date
+    - h
+    - model
+    - y_true_ret
+    - y_pred_ret
+    - y_true_level
+    - y_pred_level
+
+  columns_wf_extra:
+    - block

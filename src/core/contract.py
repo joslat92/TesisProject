@@ -118,12 +118,43 @@ class ContractValidator:
                 errors.append(f"{os.path.basename(f)}: {str(e)}")
                 print(f"[ERROR] en {os.path.basename(f)}: {str(e)}")
 
+        # 3. Consistencia de y_true entre modelos del mismo horizonte:
+        # en cada fecha común, y_true_ret debe ser IDÉNTICO en todos los
+        # archivos (un y_true desalineado = métricas inválidas; ver bug
+        # off-by-seq_len del 2026-06-11).
+        errors += self._check_truth_consistency(files_oos, "OOS")
+        errors += self._check_truth_consistency(files_wf, "WF")
+
         if errors and fail_fast:
             raise RuntimeError(
                 f"[Contract GATE] {len(errors)} archivo(s) violan el contrato:\n"
                 + "\n".join(errors)
             )
         print("--- VALIDACIÓN COMPLETADA ---\n")
+
+    def _check_truth_consistency(self, files, context):
+        """y_true_ret idéntico entre modelos por horizonte (fechas comunes)."""
+        errors = []
+        by_h = {}
+        for f in files:
+            df = pd.read_csv(f, usecols=['Date', 'h', 'y_true_ret'])
+            h = df['h'].iloc[0]
+            by_h.setdefault(h, []).append((os.path.basename(f), df))
+        for h, items in by_h.items():
+            ref_name, ref = items[0]
+            for name, df in items[1:]:
+                m = pd.merge(ref, df, on='Date', suffixes=('_ref', '_other'))
+                if m.empty:
+                    continue
+                diff = (m['y_true_ret_ref'] - m['y_true_ret_other']).abs().max()
+                if diff > 1e-10:
+                    msg = (f"{name}: y_true_ret difiere de {ref_name} "
+                           f"(h={h}, max diff={diff:.2e}) — desalineación")
+                    errors.append(msg)
+                    print(f"[ERROR] {msg}")
+        if not errors:
+            print(f">>> [Contract] y_true consistente entre modelos ({context}).")
+        return errors
 
     def run_leakage_gate(self):
         """

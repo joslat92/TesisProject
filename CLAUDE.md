@@ -33,20 +33,28 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
    pipeline, SIN commitear. Corrida preliminar solo con RW/ARIMA/LSTM. ⚠️ Sus resultados
    son SOSPECHOSOS (ver "Bug conocido") y sus figuras no son las canónicas de la tesis.
 
-## Bug conocido — CORREGIDO 2026-06-10
+## Bugs conocidos — ambos CORREGIDOS
 
-La fuga estaba en `11_train_arima.py`: modelaba la serie solapada `Target_Ret_h{h}`
-con predicción one-step-ahead (`apply().predict()`), de modo que y_{t−1}(h) —que
-contiene precios hasta t+h−1— entraba como regresor. Fix: enfoque iterado sobre
-retornos diarios (`predict_oos_iterated`: fit con datos ≤ t, `forecast(h)` y suma),
-re-fit mensual + apply diario, orden [1,0,1] sobre ret_1d. Además: purga de frontera
-train/OOS en `12_train_lstm.py` (targets de train que invadían el OOS).
-Métricas post-fix DENTRO de la cordura de la tesis (T=1 RMSE≈0.0113 todos;
-T=20: RW 0.0440, ARIMA 0.0403/MDA 0.742, LSTM 0.0391; DM ARIMA vs RW no
-significativo). Gate permanente: `tests/test_no_leakage.py` (corrupción del futuro
-⇒ ŷ_t(h) no cambia; correr con `python tests/test_no_leakage.py`, pytest no está
-en el venv). ⚠️ Las figuras de `reports/figs` aún son de la corrida buggy del
-29-12-2025; regenerar antes de usarlas.
+1. **Fuga ARIMA multi-paso (corregido 2026-06-10).** `11_train_arima.py` modelaba
+   la serie solapada `Target_Ret_h{h}` one-step-ahead ⇒ y_{t−1}(h), que contiene
+   precios hasta t+h−1, entraba como regresor. Fix: enfoque iterado sobre retornos
+   diarios (`predict_oos_iterated`), orden [1,0,1] sobre ret_1d, re-fit mensual.
+   Gate permanente: `tests/test_no_leakage.py` (pytest instalado; corre solo y
+   dentro de `run_full_gate()`).
+2. **y_true desalineado en salidas LSTM (corregido 2026-06-11).** `fit_predict`
+   usaba el índice reseteado del frame post-secuencias como etiqueta de fila del
+   parquet ⇒ y_true_ret/y_true_level/y_pred_level desplazados seq_len=40 filas en
+   TODOS los artefactos LSTM (OOS 2024, WF, multiseed). El ENTRENAMIENTO y
+   y_pred_ret siempre fueron correctos; solo la verdad reportada estaba corrida.
+   En 2024 se camufló (vol estable ⇒ RMSE plausible); el bloque 2025 lo destapó
+   (LSTM "ganando" 50–60% a RW en el crash, imposible). Fix: `orig_rows =
+   idx + seq_len` + assert de fechas; guard permanente en ContractValidator
+   (`_check_truth_consistency`: y_true idéntico entre modelos por horizonte,
+   fail-fast). ⚠️ TODA métrica LSTM anterior al 2026-06-11 (RC1, multiseed, D5
+   del Registro de Decisiones) quedó invalidada; el set vigente es **RC2**
+   (bitácora 2026-06-11). Cordura post-fix OOS 2024: T=1 todos ≈0.0113; T=20
+   RW .0440, ARIMA .0403 (MDA .742), LSTM .0414, LSTM_FULL .0423; ningún DM-HLN
+   significativo al 5% vs RW ni vs SARIMAX (mín p≈0.083).
 
 ## Especificación canónica (fuente de la verdad)
 
@@ -92,9 +100,17 @@ en el venv). ⚠️ Las figuras de `reports/figs` aún son de la corrida buggy d
    336 archivos, re-fit/scalers por bloque), DM vs RW y vs SARIMAX, MZ con p(β=1),
    tablas consolidadas en reports/data y 25 figuras canónicas en reports/figs
    (las buggy del 29-12 en _archive_corrida_buggy_20251229/). Ver bitácora.
-7. Validar RC1 con el director y decidir cierre de números para el documento.
-8. Seguir buscando fuera del repo el código multi-horizonte original (tablas del
-   doc "Numeros normales"). Bloque opcional de robustez ene–abr 2025 reservado.
+7. ✔ (2026-06-11) Cierre Fase 3: DM clásico+HLN en src/core/dm.py (tbl_DM_OOS
+   con ambas columnas), test Pesaran–Timmermann (tbl_PT_OOS, indicativo en h>1),
+   bloque de robustez 2025 (D3: config_robustez2025.yaml, 16_robustez_2025.py,
+   metrics_OOS_2025 + tbl_DM_2025 + mensual). El bloque 2025 destapó el bug #2
+   (ver arriba); todo regenerado como ★RC2★ (reemplaza a RC1; mismas
+   predicciones clásicas, métricas LSTM corregidas, ningún DM significativo).
+8. Validar RC2 con el director: actualizar D5 del Registro de Decisiones (la
+   "significancia frágil" de exógenas en T=20 era artefacto del bug #2; post-fix
+   mediana p≈0.23, 1/10 semillas <0.05, ensemble n.s.) y decidir narrativa final.
+9. Seguir buscando fuera del repo el código multi-horizonte original (tablas del
+   doc "Numeros normales").
 
 ## Datos
 

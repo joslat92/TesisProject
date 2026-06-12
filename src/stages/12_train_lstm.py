@@ -126,10 +126,17 @@ def fit_predict(df, feature_cols, params, seed, h, price_col, train_end,
     X_val, y_val = X_train_full[cut:], y_train_full[cut:]
 
     X_pred = X_all[mask_pred]
-    idx_pred = dates_all[mask_pred].index
-    y_pred_true = df.loc[idx_pred, target_col].values
-    price_pred_true = df.loc[idx_pred, f'Target_Price_h{h}'].values
-    price_base = df.loc[idx_pred, price_col].values
+    # Mapeo a filas ORIGINALES del parquet: la muestra i del frame desplazado
+    # (post-secuencias) corresponde a la fila i + seq_len del df. Usar el
+    # índice reseteado directamente contra df.loc desplaza y_true 40 filas
+    # (bug detectado 2026-06-11 en el bloque 2025).
+    orig_rows = dates_all[mask_pred].index + seq_len
+    assert (df['Date'].iloc[orig_rows].values
+            == dates_all[mask_pred].values).all(), \
+        "Desalineación fila/fecha en la salida LSTM"
+    y_pred_true = df[target_col].iloc[orig_rows].values
+    price_pred_true = df[f'Target_Price_h{h}'].iloc[orig_rows].values
+    price_base = df[price_col].iloc[orig_rows].values
 
     model = LSTMModel(len(feature_cols), params['hidden_dim'], params['dropout'])
     model = train_with_early_stopping(model, X_tr, y_tr, X_val, y_val, params)

@@ -7,6 +7,10 @@ import statsmodels.api as sm
 from scipy import stats
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from src.core.dm import diebold_mariano
+from src.core.metrics import pesaran_timmermann
+
 # Asegurar encoding UTF-8 siempre
 def load_config():
     with open("config.yaml", "r", encoding="utf-8") as f:
@@ -18,38 +22,12 @@ def calculate_mda(y_true, y_pred):
 
 def diebold_mariano_test(y_true, y_pred_base, y_pred_chal, h):
     """
-    Test DM con corrección HAC (Harvey, Leybourne, Newbold).
-    H0: Ambos modelos tienen el mismo error.
+    Wrapper de compatibilidad (lo usa 15_multiseed_lstm): devuelve el par
+    HLN (estadístico corregido, p-valor t(n−1)) de src/core/dm.py — la misma
+    convención que publicó RC1.
     """
-    e1 = (y_true - y_pred_base)**2
-    e2 = (y_true - y_pred_chal)**2
-    d = e1 - e2
-    
-    T = len(d)
-    mean_d = np.mean(d)
-    
-    # Autocovarianza para HAC (Newey-West con lag = h-1)
-    # Usamos statsmodels para consistencia
-    # O cálculo manual robusto:
-    gamma_0 = np.var(d)
-    gamma_sum = 0
-    for lag in range(1, h):
-        gamma_sum += np.cov(d[lag:], d[:-lag])[0][1]
-        
-    var_d = (gamma_0 + 2 * gamma_sum) / T
-    
-    if var_d <= 1e-16: return 0.0, 1.0 # Varianza cero -> p-value 1
-    
-    dm_stat = mean_d / np.sqrt(var_d)
-    
-    # Corrección HLN para muestras finitas
-    k = (T + 1 - 2*h + h*(h-1)/T) / T
-    dm_stat_adj = dm_stat * np.sqrt(k)
-    
-    # p-value (dos colas)
-    p_value = 2 * (1 - stats.t.cdf(np.abs(dm_stat_adj), df=T-1))
-    
-    return dm_stat_adj, p_value
+    _, _, dm_hln, p_hln = diebold_mariano(y_true, y_pred_base, y_pred_chal, h=h)
+    return dm_hln, p_hln
 
 def mincer_zarnowitz_test(y_true, y_pred):
     """
@@ -97,6 +75,7 @@ def run_evaluation():
     metrics_data = []
     dm_data = []
     mz_data = []
+    pt_data = []
 
     # Contrato: DM contra RW y contra SARIMAX
     benchmarks = ["RW", "SARIMAX"]
@@ -132,6 +111,9 @@ def run_evaluation():
             })
 
             # --- 2. DIEBOLD-MARIANO (vs RW y vs SARIMAX) ---
+            # DM_Stat/p_value: DM clásico (normal). DM_HLN/p_HLN: corrección
+            # de muestra pequeña Harvey-Leybourne-Newbold (factor √k + t(n−1)).
+            # El veredicto (Significant) se toma del p_HLN, el conservador.
             for bench, df_b in df_bench.items():
                 if model == bench:
                     continue
@@ -140,7 +122,7 @@ def run_evaluation():
                                   on='Date', suffixes=('', '_base'))
 
                 if len(common) > 10:
-                    dm_stat, p_val = diebold_mariano_test(
+                    dm_stat, p_val, dm_hln, p_hln = diebold_mariano(
                         common['y_true_ret'].values,
                         common['y_pred_ret_base'].values,
                         common['y_pred_ret'].values,
@@ -153,8 +135,23 @@ def run_evaluation():
                         'Benchmark': bench,
                         'DM_Stat': round(dm_stat, 4),
                         'p_value': round(p_val, 4),
-                        'Significant': 'YES' if p_val < 0.05 else 'NO'
+                        'DM_HLN': round(dm_hln, 4),
+                        'p_HLN': round(p_hln, 4),
+                        'Significant': 'YES' if p_hln < 0.05 else 'NO'
                     })
+
+            # --- 2b. PESARAN-TIMMERMANN (direccional; indicativo en h>1) ---
+            if model != 'RW':
+                pt_stat, pt_p, p_hat, p_star = pesaran_timmermann(
+                    df['y_true_ret'].values, df['y_pred_ret'].values)
+                pt_data.append({
+                    'Horizon': h,
+                    'Model': model,
+                    'PT_Stat': round(pt_stat, 4) if np.isfinite(pt_stat) else np.nan,
+                    'p_value': round(pt_p, 4) if np.isfinite(pt_p) else np.nan,
+                    'HitRate': round(p_hat, 4),
+                    'HitRate_H0': round(p_star, 4),
+                })
 
             # --- 3. MINCER-ZARNOWITZ (Sobre Niveles) ---
             alpha, beta, r2, p_a, p_b0, p_b1 = mincer_zarnowitz_test(
@@ -180,16 +177,23 @@ def run_evaluation():
         print("\n--- RESUMEN MÉTRICAS (OOS) ---")
         print(df_met.pivot(index='Horizon', columns='Model', values=['RMSE', 'MDA']))
 
-    # DM: tabla completa (tbl_DM_OOS) + resumen compacto (dm_summary)
+    # DM: tabla completa (tbl_DM_OOS) + resumen compacto (dm_summary, p_HLN)
     if dm_data:
         df_dm = pd.DataFrame(dm_data)
         df_dm.to_csv(os.path.join(output_dir, "tbl_DM_OOS.csv"), index=False)
         dm_compact = df_dm.pivot_table(index=['Horizon', 'Challenger'],
-                                       columns='Benchmark', values='p_value').reset_index()
-        dm_compact.columns = ['Horizon', 'Challenger'] + [f"p_vs_{c}" for c in dm_compact.columns[2:]]
+                                       columns='Benchmark', values='p_HLN').reset_index()
+        dm_compact.columns = ['Horizon', 'Challenger'] + [f"pHLN_vs_{c}" for c in dm_compact.columns[2:]]
         dm_compact.to_csv(cfg['paths']['dm_results'], index=False)
-        print("\n--- RESUMEN DIEBOLD-MARIANO (p-values) ---")
+        print("\n--- RESUMEN DIEBOLD-MARIANO (p-values HLN) ---")
         print(dm_compact.to_string(index=False))
+
+    # PT: acierto direccional (indicativo en h>1 por solape de ventanas)
+    if pt_data:
+        df_pt = pd.DataFrame(pt_data)
+        df_pt.to_csv(os.path.join(output_dir, "tbl_PT_OOS.csv"), index=False)
+        print("\n--- PESARAN-TIMMERMANN (direccional; h>1 indicativo) ---")
+        print(df_pt.to_string(index=False))
 
     # MZ: core + resumen
     if mz_data:

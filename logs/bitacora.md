@@ -1,5 +1,104 @@
 # Bitácora del proyecto
 
+## 2026-06-11 — Cierre Fase 3: HLN + PT + robustez 2025 → bug #2 → ★RC2★
+
+### 1. Corrección HLN (tarea 1) ✔
+- `src/core/dm.py` reescrito: `diebold_mariano()` devuelve el DM clásico
+  (N(0,1)) Y el corregido HLN-1997 (factor √k, k=(n+1−2h+h(h−1)/n)/n, t(n−1)).
+  `tbl_DM_OOS.csv` ahora trae DM_Stat/p_value (clásico) + DM_HLN/p_HLN;
+  dm_summary.csv pivota sobre p_HLN (el conservador).
+- **Hallazgo de procedencia**: el DM embebido en 20_evaluate_stats (RC1) YA
+  aplicaba k y t(n−1) sin declararlo — los p publicados de RC1 eran HLN.
+- Respuesta a la pregunta de la sesión (sobre números RC1): NINGUNA de las 4
+  celdas significativas cambiaba de veredicto con HLN; 2 celdas de LSTM plain
+  T=20 sí perdían significancia (0.040→0.059 vs RW; 0.049→0.071 vs SARIMAX).
+  ⚠️ Pregunta superada por el bug #2 (abajo): en RC2 ninguna celda es
+  significativa.
+
+### 2. Pesaran–Timmermann (tarea 2) ✔
+- `pesaran_timmermann()` en `src/core/metrics.py` (una cola, dirección = ret>0,
+  advertencia en docstring: el solape de ventanas en h>1 INFLA el estadístico —
+  resultado indicativo, la inferencia formal es DM-HLN). `tbl_PT_OOS.csv`
+  generada (RW excluido por dirección indefinida). Casos degenerados
+  (predicciones de un solo signo, p.ej. ARIMA en T≥5) → NaN documentado.
+- Post-fix: ningún PT significativo al 5% (los p<0.05 pre-fix eran artefacto).
+
+### 3. Bloque de robustez 2025 (tarea 3, decisión D3) ✔
+- `config_robustez2025.yaml` (derivado, NO toca el canónico): train ≤
+  2024-12-31, OOS 2025-01-02→2025-04-22. `16_robustez_2025.py`: 7 modelos,
+  seed 42, doble gate anti-fuga (suite pytest + corrupción inline del futuro
+  en t=2025-02-14). OOS efectivo por h (el target recorta el final): h=1 74
+  obs (hasta 04-21), h=20 55 obs (hasta 03-24, ventanas que cubren abril).
+- Para los h pasos del forecast cerca del fin de muestra, la serie de
+  retornos de los clásicos viene del RAW (hasta 04-22) recortada al primer
+  día del parquet (lags completos).
+
+### 4. ⚠️ BUG #2 DESCUBIERTO Y CORREGIDO: y_true desplazado en salidas LSTM
+- La primera corrida 2025 dio LSTM ganando a RW por 48–60% (T=1 RMSE 0.0116
+  vs 0.0223) — imposible. Auditoría: correlación pred-real ≈ 0, std(pred)
+  mínima… y `std(y_true)` del archivo LSTM ≠ del archivo RW en las MISMAS
+  fechas. Causa: en `fit_predict`, `dates_all[mask].index` (índice reseteado
+  del frame post-secuencias) se usaba como etiqueta de fila del parquet ⇒
+  y_true_ret/y_true_level/y_pred_level tomados 40 filas (seq_len) ANTES de la
+  fecha declarada. El bug venía del 12_train_lstm.py ORIGINAL del 29-12-2025
+  y sobrevivió las refactorizaciones.
+- El entrenamiento y las y_pred_ret eran CORRECTOS (alineación posicional
+  numpy); solo la verdad reportada estaba corrida. En 2024 el RMSE contra una
+  ventana corrida 40 días era estadísticamente parecido (vol estable) y pasó
+  todos los chequeos de cordura; el cruce calma→crash de 2025 lo delató.
+- Fix: `orig_rows = idx + seq_len` + assert fila/fecha en fit_predict.
+- **Guard permanente nuevo** en ContractValidator
+  (`_check_truth_consistency`, fail-fast): y_true_ret debe ser IDÉNTICO entre
+  modelos del mismo horizonte en fechas comunes (OOS y WF). Habría cazado
+  este bug tres sesiones antes.
+- Regenerado TODO el universo LSTM: OOS 2024 (12), WF (144), multiseed (120),
+  2025 (12) + métricas + DM/PT/MZ + 25 figuras + boxplot multiseed.
+
+### 5. ★RC2★ — resultados vigentes (reemplaza a RC1)
+OOS 2024 RMSE post-fix (T=20): ARIMA .04032 < LSTM .04141 < LSTM_FULL .04232
+< LSTM_SENT .04243 < ARIMAX/SARIMAX .04249 < RW .04396. T=1 todos ≈ .0113.
+- **DM-HLN: NINGUNA celda significativa al 5%** (vs RW ni vs SARIMAX; mín
+  p=.083 LSTM T=20). Las 4 celdas "significativas" de RC1 eran artefacto del
+  bug #2. El empate técnico es ahora la conclusión transversal del OOS 2024.
+- Multiseed corregido (LSTM_FULL T=20 vs RW): DM>0 en 10/10 semillas y RMSE
+  bajo RW en 10/10, PERO mediana p=.226, 1/10 con p<.05, ensemble p=.179.
+  **D5 del Registro de Decisiones queda invalidada** en sus números (era
+  mediana .062, 4/10, ensemble .049): la nueva redacción honesta es "ventaja
+  consistente en magnitud pero no significativa". Adenda añadida al Registro.
+- WF 2024 (medias por bloque) coherente con OOS: T=20 ARIMA .0367 … RW .0417.
+
+### 6. Robustez 2025 — comportamiento por familia en el shock de abril
+RMSE h=20 por mes de ORIGEN (la ventana de 20 días de feb cubre el selloff de
+mar; la de mar cubre el crash de abril):
+| Modelo | Ene (calma) | Feb | Mar |
+|---|---|---|---|
+| RW | .0302 | **.0900** | **.0810** |
+| ARIMA | .0288 | .1026 | .0929 |
+| ARIMAX/SARIMAX | .0282 | .1042 | .1015 |
+| LSTM | .0307 | .1073 | .1022 |
+| LSTM_SENT | .0305 | .1086 | .1007 |
+| LSTM_FULL | .0289 | .1003 | .0929 |
+- **Enero (régimen normal)**: empate técnico, varios modelos por debajo de RW
+  (ARIMAX .0282) — replica el patrón OOS 2024.
+- **Feb–Mar (ventanas que cubren el selloff/crash)**: RW gana a TODOS por
+  12–21%; DM 2025 negativo para todos en T≥5 (nada significativo; LSTM T=5
+  p=.069 es lo más cercano… a ser significativamente PEOR que RW).
+- **¿Se repite agosto 2024?** Sí en lo esencial y con un matiz: en los bloques
+  8–9 del WF 2024 el deterioro fue específicamente neuronal (+70–90% dRMSE vs
+  RW, clásicos casi planos). En 2025 el deterioro bajo estrés es GENERAL:
+  todas las familias (clásicas y neuronales) pierden contra RW en magnitudes
+  similares; LSTM_FULL es incluso el mejor modelo (no-RW) en T=20 (.0793 vs
+  ARIMA .0803), pero sigue 12% detrás de RW (.0710). Lectura para la tesis:
+  las ventajas de TODOS los modelos sobre RW son propiedad del régimen
+  tranquilo; en estrés la predicción cero del RW es la más robusta — y la
+  fragilidad ya no es exclusiva de las redes.
+
+### Pendientes
+- Ratificar con el director: RC2 (números finales), nueva redacción de D5,
+  y la narrativa de regímenes con la evidencia 2025.
+- Incorporar tablas RC2 + PT + bloque 2025 al Capítulo 7 (borrador v1.3 en
+  raíz, pendiente de actualizar con estos números).
+
 ## 2026-06-10 (sesión 4) — Fase 3: análisis multi-semilla LSTM (OOS) ✔
 
 ### Qué se hizo
