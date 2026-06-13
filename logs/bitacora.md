@@ -44,9 +44,14 @@
   restauración de configs; clásicos y gates quedan EXACTOS/completos).
 - `requirements.txt` congelado con versiones exactas (pip freeze filtrado;
   torch 2.9.1 = rueda CPU en Windows).
-- Prueba de fuego: clon limpio + venv desde cero + install + run_all --quick
-  + comparación de métricas clásicas del clon vs RC2 → resultado al final de
-  esta entrada.
+- Prueba de fuego (scripts/cleanroom_test.ps1): clon limpio en %TEMP% + venv
+  desde cero + install congelado (torch CPU) + run_all --quick →
+  **CLEANROOM_OK**: RUN_ALL_OK en 6.1 min con todos los gates pasados dentro
+  del clon, y métricas CLÁSICAS del clon IDÉNTICAS a RC2 en metrics_OOS.csv
+  y metrics_OOS_2025.csv (igualdad exacta; los clásicos no dependen de
+  --quick). Verificado completo: clásicos + gates + mecánica de toda la
+  cadena; verificado en modo rápido: números LSTM/WF/multiseed (la cadena
+  completa es la que generó RC2 en este repo).
 - `docs/REPRODUCIR.md` con las instrucciones exactas y la tabla de qué se
   verificó completo vs en modo rápido.
 

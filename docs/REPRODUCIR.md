@@ -50,15 +50,20 @@ gates.
 En `--quick` los configs se parchean en memoria de la corrida (epochs=2) y se
 restauran al terminar.
 
-## Verificación realizada (2026-06-12)
+## Verificación realizada (2026-06-12, script: scripts/cleanroom_test.ps1)
 - Clon limpio en carpeta temporal + venv desde cero + `pip install -r
-  requirements.txt` + `run_all.py --quick`: **[PENDIENTE — se actualiza al
-  terminar la prueba de fuego]**
-- Comparación de las métricas de los modelos clásicos del clon contra las del
-  repositorio (RC2): **[PENDIENTE]**
-- La reproducción completa (sin `--quick`) corresponde a la cadena con la que
-  se generó RC2 en el repositorio principal (bitácora 2026-06-11/12); no se
-  repitió entera en el clon por costo (≥2 h), solo su mecánica.
+  requirements.txt` (con descarga de torch CPU) + `run_all.py --quick`:
+  **RUN_ALL_OK en 6.1 min**, todos los gates pasados dentro del clon
+  (contrato fail-fast, anti-fuga, y_true contra fuente primaria).
+- Comparación de las métricas de los modelos clásicos (RW/ARIMA/ARIMAX/
+  SARIMAX) del clon contra las del repositorio (RC2): **IDÉNTICAS** en
+  `metrics_OOS.csv` y `metrics_OOS_2025.csv` (igualdad exacta de
+  RMSE/MAE/MDA por horizonte) — los clásicos no dependen del flag --quick.
+- Verificado en modo rápido (no repetido en el clon por costo): los números
+  LSTM (epochs=30), el walk-forward (14) y el multi-semilla (15). Esos
+  corresponden a la cadena completa con la que se generó RC2 en el
+  repositorio principal (bitácora 2026-06-11/12), ejecutable con
+  `run_all.py` sin flags.
 
 ## Notas de entorno
 - Los resultados LSTM son deterministas dada la semilla en CPU con estas
