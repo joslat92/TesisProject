@@ -36,14 +36,20 @@ def diebold_mariano(y_true, y_pred_bench, y_pred_chall, h=1):
     n = len(d)
     mean_d = np.mean(d)
 
-    # Varianza HAC (Newey-West, truncamiento L = h−1)
+    # Varianza HAC Newey-West con kernel de BARTLETT (w_k = 1 − k/h),
+    # truncamiento L = h−1. El kernel rectangular del DM(1995) original
+    # puede arrojar varianza NEGATIVA (ocurrió con n=55, h=20 en el bloque
+    # 2025 ⇒ DM espurio = 0.0); Bartlett garantiza semidefinida positiva.
     gamma_0 = np.var(d)
     gamma_sum = 0.0
     for lag in range(1, h):
-        gamma_sum += np.cov(d[lag:], d[:-lag])[0][1]
+        w = 1.0 - lag / h
+        gamma_sum += w * np.cov(d[lag:], d[:-lag])[0][1]
     var_d = (gamma_0 + 2 * gamma_sum) / n
 
     if var_d <= 1e-16:
+        # Caso degenerado genuino: predicciones idénticas (d constante ≈ 0,
+        # p.ej. ARIMAX ≡ SARIMAX con gate estacional apagado) ⇒ sin evidencia.
         return 0.0, 1.0, 0.0, 1.0
 
     dm_stat = mean_d / np.sqrt(var_d)

@@ -59,9 +59,12 @@ las filas LSTM no. Todo el universo LSTM fue regenerado (set vigente: **RC2**).
 
 **Impacto sobre D5 (números corregidos, LSTM_FULL T=20 vs RW):** la dirección se
 mantiene (DM>0 en 10/10 semillas; RMSE bajo RW en 10/10), pero la significancia
-desaparece: mediana p=0.226 (antes 0.062), 1/10 semillas con p<0.05 (antes 4/10),
-ensemble p=0.179 (antes 0.049). En el OOS 2024 corregido NINGUNA celda DM-HLN es
-significativa al 5% (vs RW ni vs SARIMAX).
+desaparece: mediana p=0.194 (antes 0.062), 1/10 semillas con p<0.05 (antes 4/10),
+ensemble p=0.140 (antes 0.049). [Números con kernel de Bartlett en la varianza
+HAC, adoptado 2026-06-12 tras detectar varianza rectangular negativa en el bloque
+2025; detalle en bitácora.] En el OOS 2024 corregido la única celda DM-HLN
+significativa al 5% es LSTM_SENT T=5 vs RW (p=0.049, marginal; con ~36 contrastes
+es compatible con ruido de comparaciones múltiples y no se propone como hallazgo).
 
 **Redacción propuesta para D5 (a ratificar):** "ventaja consistente en magnitud
 (10/10 semillas con RMSE bajo RW) pero estadísticamente no significativa; sin
@@ -71,3 +74,11 @@ empate técnico es la conclusión transversal del OOS 2024."
 D1, D2, D3 y D6 no se afectan. D4 se refuerza: la fuente canónica reproducible y
 sus gates automáticos fueron precisamente lo que permitió detectar y corregir el
 error (el guard de consistencia de y_true queda permanente en el validador).
+
+---
+
+**RC2 sellado: y_true verificado contra fuente primaria el 2026-06-12, commit
+a06f473** (tests/test_ytrue_sanity.py: retorno acumulado recomputado a mano desde
+data/data.csv crudo en 10 fechas aleatorias del OOS 2024 + 5 del bloque 2025 por
+horizonte, contrastado contra los 56 archivos de predicciones de los 7 modelos,
+tolerancia 1e-10; integrado a la suite permanente del gate).

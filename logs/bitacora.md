@@ -1,5 +1,63 @@
 # Bitácora del proyecto
 
+## 2026-06-12 — Sellado de RC2
+
+### 1. Verificación independiente del y_true (prioridad máxima) ✔
+- `tests/test_ytrue_sanity.py`: recomputa A MANO el retorno acumulado desde
+  `data/data.csv` crudo (solo pandas/numpy sobre el CSV, sin módulos del
+  pipeline) y lo compara contra y_true_ret de TODOS los archivos de
+  predicciones: 10 fechas aleatorias del OOS 2024 + 5 del bloque 2025 por
+  horizonte, tolerancia 1e-10 (también verifica y_true_level = P[t+h]).
+  Semilla fija 20260612. **56 archivos (7 modelos × 4 h × 2 periodos): PASA.**
+- Integrado a la suite del gate: `run_leakage_gate()` ahora corre `pytest
+  tests/` completo (anti-fuga + cordura) — 5 tests.
+- Sello añadido al final de Registro_Decisiones_1.md: "RC2 sellado: y_true
+  verificado contra fuente primaria el 2026-06-12, commit a06f473".
+
+### 2. Anomalía DM=0.0 en tbl_DM_2025 — VEREDICTO ✔
+- NO era bug de generación de tabla (sin duplicados, merge correcto) ni
+  pérdidas idénticas (mean_d = −3.2e-04 ≠ 0).
+- Causa: **varianza HAC rectangular NEGATIVA** (kernel uniforme truncado en
+  L=h−1=19 con n=55: var_rect = −1.7e-08 para LSTM vs SARIMAX y −2.4e-08 para
+  LSTM_SENT vs SARIMAX) → el centinela var≤0 de dm.py devolvía (0.0, 1.0).
+  Es la patología conocida del kernel rectangular del DM(1995) original.
+- La fila ARIMAX vs SARIMAX = 0.0 sí es el caso degenerado GENUINO
+  (predicciones idénticas con gate estacional apagado); se mantiene.
+- Fix: `src/core/dm.py` pasa a kernel de **Bartlett** (w_k = 1−k/h, PSD
+  garantizada — Newey-West estándar; el contrato dice "HAC" sin fijar kernel).
+  Tablas DM regeneradas SIN re-entrenar (20, 16 --tables-only nuevo,
+  15 --analysis-only, 30).
+- **Cambios de veredicto por Bartlett (documentados):**
+  - OOS 2024: aparece UNA celda significativa al 5%: LSTM_SENT T=5 vs RW
+    p=0.049 (antes 0.099). Marginal; con ~36 contrastes es compatible con
+    ruido de comparaciones múltiples — NO se propone como hallazgo. El resto
+    sigue n.s. (LSTM T=20 p=0.062, LSTM_FULL T=20 p=0.073).
+  - 2025: las filas 0.0 toman valores reales (LSTM vs SARIMAX T=20: −1.43,
+    p=0.157). LSTM queda significativamente PEOR que RW en T=5 (p=0.039) —
+    refuerza la narrativa de regímenes.
+  - Multiseed (LSTM_FULL T=20 vs RW): mediana p 0.226→0.194, ensemble
+    0.179→0.140; misma lectura (n.s.). Adenda de D5 actualizada.
+
+### 3. Reproducibilidad de punta a punta (Apéndice B) ✔
+- `run_all.py`: cadena completa 00→30 con un comando; `--quick` para
+  verificación de mecánica (omite WF y multiseed, LSTM epochs=2 con parche y
+  restauración de configs; clásicos y gates quedan EXACTOS/completos).
+- `requirements.txt` congelado con versiones exactas (pip freeze filtrado;
+  torch 2.9.1 = rueda CPU en Windows).
+- Prueba de fuego: clon limpio + venv desde cero + install + run_all --quick
+  + comparación de métricas clásicas del clon vs RC2 → resultado al final de
+  esta entrada.
+- `docs/REPRODUCIR.md` con las instrucciones exactas y la tabla de qué se
+  verificó completo vs en modo rápido.
+
+### 4. Cierre documental
+- ⚠️ La estructura docs/ con material RC2 que el autor dijo haber organizado
+  NO está en el árbol de trabajo (verificado: no existe docs/ ni archivos
+  nuevos además del Registro tocado a las 08:31). Se commitea solo
+  docs/REPRODUCIR.md; pendiente que el autor recupere/copie su material.
+- CLAUDE.md: episodio RC2 añadido a Historia (#5), prioridades 8-10
+  actualizadas, números Bartlett en la sección de bugs.
+
 ## 2026-06-11 — Cierre Fase 3: HLN + PT + robustez 2025 → bug #2 → ★RC2★
 
 ### 1. Corrección HLN (tarea 1) ✔

@@ -7,7 +7,7 @@ el estudio principal (OOS=2024) no se toca. Sin walk-forward ni multi-semilla:
 clásicos + 3 variantes LSTM con seed canónica 42.
 
 Gate anti-fuga en dos capas antes de generar nada:
-1. Suite pytest canónica (tests/test_no_leakage.py).
+1. Suite pytest canónica (tests/).
 2. Chequeo inline específico de 2025: en t=2025-02-14 se corrompen retornos y
    exógenas posteriores a t y se exige y_hat_t(h=20) idéntico para ARIMA y
    ARIMAX/SARIMAX.
@@ -17,6 +17,10 @@ del fin del raw (h=20 → 2025-03-24), porque el target no existe después.
 Para que el forecast de los últimos orígenes tenga sus h pasos de calendario,
 la serie de retornos de los clásicos se toma del RAW (hasta 2025-04-22),
 recortada al primer día del parquet (lags completos).
+
+Uso: python src/stages/16_robustez_2025.py [--tables-only]
+--tables-only: recalcula métricas/mensual/DM desde las predicciones ya
+generadas en outputs/preds/OOS_2025 (sin re-entrenar ni re-pronosticar).
 """
 import pandas as pd
 import numpy as np
@@ -81,18 +85,13 @@ def inline_leakage_gate_2025(stage_arima, stage_sarimax, y_ret, exog_raw,
                            "futuro de 2025. Pipeline detenido.")
     print("--- GATE ANTI-FUGA INLINE 2025 (t=2025-02-14, h=20): OK ---")
 
-def run_robustez():
-    with open(os.path.join(ROOT, CFG_PATH), "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
-
-    print(">>> [Robustez 2025] OOS ene-abr 2025 bajo Contrato (D3)...")
-
+def generate_predictions(cfg, val):
+    """Genera las predicciones 2025 de los 7 modelos (con gates)."""
     stage_arima = _load_stage("11_train_arima.py", "stage_11_train_arima")
     stage_sarimax = _load_stage("13_train_sarimax.py", "stage_13_train_sarimax")
     stage_lstm = _load_stage("12_train_lstm.py", "stage_12_train_lstm")
 
-    # GATE capa 1: suite anti-fuga canónica
-    val = ContractValidator(os.path.join(ROOT, CFG_PATH))
+    # GATE capa 1: suite anti-fuga + cordura canónica
     val.run_leakage_gate()
 
     horizons = cfg['features']['horizons']
@@ -110,8 +109,6 @@ def run_robustez():
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(os.path.join(ROOT, cfg['paths']['preds_wf_dir']), exist_ok=True)
 
-    # Serie de retornos de los clásicos: RAW completo (ver nota del módulo),
-    # recortado al primer día del parquet de mayor h (lags completos).
     raw = pd.read_csv(os.path.join(ROOT, cfg['data']['raw_source']),
                       parse_dates=['Date']).set_index('Date').sort_index()
     raw['ret_1d'] = np.log(raw[cfg['data']['target_col']]).diff()
@@ -175,6 +172,21 @@ def run_robustez():
 
     # Validación de contrato fail-fast sobre el set 2025
     val.validate_all_outputs(fail_fast=True)
+
+def run_robustez(tables_only=False):
+    with open(os.path.join(ROOT, CFG_PATH), "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+
+    print(">>> [Robustez 2025] OOS ene-abr 2025 bajo Contrato (D3)...")
+    val = ContractValidator(os.path.join(ROOT, CFG_PATH))
+
+    if tables_only:
+        print("   (--tables-only: usando predicciones existentes de OOS_2025)")
+    else:
+        generate_predictions(cfg, val)
+
+    horizons = cfg['features']['horizons']
+    out_dir = os.path.join(ROOT, cfg['paths']['preds_oos_dir'])
 
     # --- Métricas, mensual y DM ---
     metrics_rows, monthly_rows, dm_rows = [], [], []
@@ -242,4 +254,4 @@ def run_robustez():
     print("\n>>> [Robustez 2025] Completado.")
 
 if __name__ == "__main__":
-    run_robustez()
+    run_robustez(tables_only="--tables-only" in sys.argv)

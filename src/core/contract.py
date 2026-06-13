@@ -158,12 +158,13 @@ class ContractValidator:
 
     def run_leakage_gate(self):
         """
-        Gate anti-fuga (contrato §8): ejecuta tests/test_no_leakage.py con
-        pytest y detiene el pipeline si algún test falla.
+        Gate anti-fuga + cordura (contrato §8): ejecuta la suite tests/
+        (test_no_leakage.py y test_ytrue_sanity.py — verificación del y_true
+        contra la fuente primaria) y detiene el pipeline si algo falla.
         """
-        print("--- GATE ANTI-FUGA (tests/test_no_leakage.py) ---")
+        print("--- GATE ANTI-FUGA + CORDURA (tests/) ---")
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "tests/test_no_leakage.py", "-q"],
+            [sys.executable, "-m", "pytest", "tests", "-q"],
             capture_output=True, text=True
         )
         tail = (result.stdout or "").strip().splitlines()
