@@ -6,7 +6,7 @@ Rama de entrega: `auditoria-codex-rc2-1`
 
 ## Veredicto general
 
-RC2.1 corrige de forma verificable los dos bugs criticos de evaluacion reportados, pero no queda plenamente auditada como reproduccion completa porque solo pude ejecutar `run_all.py --quick`; ademas encontre un problema metodologico importante en Mincer-Zarnowitz: el HAC usa `maxlags=1` fijo para todos los horizontes.
+RC2.1 corrige de forma verificable los dos bugs criticos de evaluacion reportados y reproduce las predicciones/tablas con reentrenamiento completo; el principal problema metodologico que encontre es que Mincer-Zarnowitz usa HAC con `maxlags=1` fijo para todos los horizontes.
 
 ## Hallazgos
 
@@ -28,7 +28,7 @@ Impacto:
 - No vi que cambie la conclusion cualitativa principal de MZ, porque los ejemplos siguen bajo 5%.
 - Pero las tablas comprometidas `reports/data/tbl_MZ_core.csv` subestiman la incertidumbre para horizontes largos. Recomiendo regenerar MZ con `maxlags=h-1` o documentar explicitamente por que MZ usa L=1 mientras DM usa L=h-1.
 
-### IMPORTANTE - Reproducibilidad completa no verificada de forma independiente
+### OBSERVACION - Reproduccion completa con reentrenamiento verificada; no todos los artefactos son bit-a-bit
 
 Evidencia:
 
@@ -36,14 +36,25 @@ Evidencia:
   - `python -m venv .codex_audit_venv`
   - `.codex_audit_venv\Scripts\python.exe -m pip install -r requirements.txt`
 - Instalacion exitosa, pero `pip` aviso que `numpy==2.4.0` esta yanked en PyPI por `Backward compatibility bug`.
-- Ejecute `.codex_audit_venv\Scripts\python.exe run_all.py --quick`, no el completo, por costo operativo del pipeline completo (WF 144 entrenamientos + multiseed 120 entrenamientos). Resultado: `RUN_ALL_OK (QUICK)` en 8.2 min.
-- El modo `--quick` modifica LSTM a `epochs=2`; por diseno no reproduce los numeros LSTM, WF ni multiseed canonicos. `git diff --unified=0 -- reports/data/metrics_OOS.csv reports/data/metrics_OOS_2025.csv` mostro cambios solo en filas LSTM/LSTM_SENT/LSTM_FULL; las filas clasicas no cambiaron.
+- Primero ejecute `.codex_audit_venv\Scripts\python.exe run_all.py --quick`: `RUN_ALL_OK (QUICK)` en 8.2 min. Como era esperable, ese modo cambio filas LSTM por `epochs=2` y solo sirve como prueba mecanica.
+- Despues ejecute reproduccion completa en worktree limpio `TesisProject-full-repro` desde `origin/reestructura-dic2025`:
+  - `.venv_full_repro\Scripts\python.exe run_all.py`
+  - Resultado del log `full_repro_stdout.log`: `RUN_ALL_OK (COMPLETO) en 19.5 min`.
+  - Tiempos por etapa: `00_prepare` 4s, RW 9s, ARIMA 39s, ARIMAX/SARIMAX 219s, LSTM OOS 51s, walk-forward 505s, multiseed 218s, robustez 2025 104s, evaluacion/gate 12s, figuras 10s.
+  - Gate interno: `5 passed in 8.36s`, `GATE ANTI-FUGA: OK`, `stderr` vacio.
+- Comparacion posterior con `git diff`:
+  - Sin diferencias en `outputs/preds/`.
+  - Sin diferencias en `reports/data/metrics_OOS.csv`, `metrics_OOS_2025.csv`, `metrics_WF.csv`, `tbl_DM_OOS.csv`, `tbl_DM_2025.csv`, `tbl_MZ_core.csv`, `tbl_PT_OOS.csv`, `multiseed_dm_T20_LSTM_FULL.csv` ni el resto de CSV de `reports/data`, salvo `metadata_snapshot.csv`.
+  - Diferencias no sustantivas:
+    - `data/processed/splits.json`: solo `created_at`.
+    - `reports/data/metadata_snapshot.csv`: `timestamp` y `config_hash`; `raw_data_hash` y `n_rows_raw=2561` coinciden. El `config_hash` comprometido no corresponde al `config.yaml` actual, aunque eso no afecto las predicciones/tablas regeneradas.
+    - `reports/figs/Fig_multiseed_boxplot.png`: difiere como PNG regenerado; los datos subyacentes `multiseed_*` coinciden.
 
 Impacto:
 
-- Verifique reproducibilidad mecanica, gates y metricas clasicas exactas.
-- No puedo certificar que una corrida completa fresca regenere bit a bit todas las tablas comprometidas de LSTM/WF/multiseed. Esta afirmacion queda no verificada por esta auditoria.
-- El pin a una version yanked de NumPy es un riesgo de reproducibilidad futura.
+- La reproduccion completa si valida que los modelos reentrenados regeneran exactamente las predicciones y tablas numericas de RC2.1.
+- La reproducibilidad no es bit-a-bit para todos los artefactos porque hay timestamps, un `config_hash` inconsistente en metadata y una figura PNG no identica.
+- El pin a una version yanked de NumPy sigue siendo un riesgo de reproducibilidad futura.
 
 ### MENOR - `config.yaml` contiene un parametro SARIMAX muerto o contradictorio
 
@@ -168,15 +179,15 @@ Conclusion:
 
 ## Afirmaciones no verificadas o contradictorias
 
-- No pude verificar una reproduccion completa fresca de `run_all.py` sin flags. Solo ejecute `run_all.py --quick`; por tanto, los numeros canonicos LSTM/WF/multiseed completos quedan aceptados por artefacto comprometido y por tests, no por reproduccion completa independiente.
+- La reproduccion completa fresca de `run_all.py` sin flags quedo verificada: predicciones y tablas numericas coinciden. No queda verificado bit-a-bit el PNG `reports/figs/Fig_multiseed_boxplot.png`, y `metadata_snapshot.csv` no es estable por timestamp/config_hash.
 - `Registro_Decisiones.md`, pedido en la orientacion inicial, no existe con ese nombre. El archivo real es `Registro_Decisiones_1.md`.
-- `docs/REPRODUCIR.md` afirma prueba de clon limpio con `run_all.py --quick`; mi auditoria reproduce el modo quick en entorno limpio, pero no repite clon limpio separado ni pipeline completo.
+- `docs/REPRODUCIR.md` afirma prueba de clon limpio con `run_all.py --quick`; mi auditoria reproduce el modo quick y ademas ejecuta `run_all.py` completo en worktree limpio, aunque no en un segundo clon remoto independiente.
 - `config.yaml` declara `sarimax.order: [1,1,1]`, pero el codigo usa el orden ARIMA `[1,0,1]` para ARIMAX/SARIMAX. Esta contradiccion no cambia los artefactos actuales, pero si contradice la lectura natural del config.
 
 ## Recomendaciones
 
 1. Corregir MZ para aceptar `h` y usar `cov_kwds={'maxlags': h-1}` en horizontes acumulados, o documentar formalmente por que MZ debe usar L=1.
-2. Rehacer una corrida completa `run_all.py` en maquina con tiempo suficiente y guardar un log con hashes de `reports/data/*.csv` antes/despues.
+2. Arreglar la metadata de reproducibilidad: `metadata_snapshot.csv` deberia registrar un `config_hash` que corresponda al `config.yaml` vigente o excluir campos temporales de la comparacion.
 3. Reemplazar `numpy==2.4.0` por una version no yanked si los resultados no cambian materialmente, o documentar el riesgo de depender de una version retirada.
 4. Eliminar o activar `models.params.sarimax.order` para evitar parametros muertos.
 5. Agregar un test anti-fuga LSTM por corrupcion de futuro, aunque sea en modo reducido con `epochs=1`, para cubrir la familia neuronal con el mismo criterio adversarial que ARIMA/ARIMAX.
