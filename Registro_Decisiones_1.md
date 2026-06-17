@@ -74,11 +74,14 @@ las filas LSTM no. Todo el universo LSTM fue regenerado (set vigente: **RC2**).
 
 **Impacto sobre D5 (números corregidos, LSTM_FULL T=20 vs RW):** la dirección se
 mantiene (DM>0 en 10/10 semillas; RMSE bajo RW en 10/10), pero la significancia
-desaparece: mediana p=0.194 (antes 0.062), 1/10 semillas con p<0.05 (antes 4/10),
-ensemble p=0.140 (antes 0.049). [Números con kernel de Bartlett en la varianza
+desaparece: mediana p=0.190 (antes 0.062), 1/10 semillas con p<0.05 (antes 4/10),
+ensemble p=0.136 (antes 0.049). [Números con kernel de Bartlett en la varianza
 HAC, adoptado 2026-06-12 tras detectar varianza rectangular negativa en el bloque
-2025; detalle en bitácora.] En el OOS 2024 corregido la única celda DM-HLN
-significativa al 5% es LSTM_SENT T=5 vs RW (p=0.049, marginal; con ~36 contrastes
+2025; afinados 2026-06-16 con la convención HAC unificada del DM, ver
+docs/cierre_auditoria_2026-06-16.md — el cambio es <0.0025 y no altera veredictos.]
+En el OOS 2024
+corregido la única celda DM-HLN significativa al 5% es LSTM_SENT T=5 vs RW
+(p=0.048, marginal; con ~36 contrastes
 es compatible con ruido de comparaciones múltiples y no se propone como hallazgo).
 
 **Redacción propuesta para D5 (a ratificar):** "ventaja consistente en magnitud
@@ -97,3 +100,11 @@ a06f473** (tests/test_ytrue_sanity.py: retorno acumulado recomputado a mano desd
 data/data.csv crudo en 10 fechas aleatorias del OOS 2024 + 5 del bloque 2025 por
 horizonte, contrastado contra los 56 archivos de predicciones de los 7 modelos,
 tolerancia 1e-10; integrado a la suite permanente del gate).
+
+---
+
+## Nota de nomenclatura (2026-06-16)
+Se adopta **RC2.1** como etiqueta única del set sellado de resultados, alineada con
+`config.yaml` (version 2.1.0) y los entregables externos. "RC2" en las bitácoras y
+entradas fechadas de junio-2026 designa exactamente el mismo set; no se reescriben
+los registros históricos. El tag git anotado `RC2.1` marca el commit sellado.

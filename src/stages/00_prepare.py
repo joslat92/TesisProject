@@ -2,8 +2,11 @@ import pandas as pd
 import numpy as np
 import yaml
 import os
+import sys
 import json
 import hashlib
+import platform
+import subprocess
 from datetime import datetime
 
 # Cargar configuración SSOT
@@ -24,6 +27,16 @@ def get_file_hash(filepath):
         for byte_block in iter(lambda: f.read(4096), b""):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
+
+def get_git_commit():
+    """Hash del commit HEAD (o 'unknown' si no hay git/repositorio)."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        return "unknown"
 
 def run_prepare():
     cfg = load_config()
@@ -113,11 +126,18 @@ def run_prepare():
     snapshot_path = cfg['paths']['metadata_snapshot']
     os.makedirs(os.path.dirname(snapshot_path), exist_ok=True)
     
+    # Snapshot de reproducibilidad obligatorio (contrato §10): timestamp,
+    # dataset_sha256, git_commit, python_version, pip_freeze_hash
+    # (hash de requirements.txt según permite el contrato) y config_sha256.
+    req_path = "requirements.txt"
     snapshot_data = {
         "timestamp": [datetime.now().isoformat()],
-        "raw_data_hash": [get_file_hash(raw_path)],
-        "config_hash": [get_file_hash("config.yaml")],
-        "n_rows_raw": [len(df)]
+        "dataset_sha256": [get_file_hash(raw_path)],
+        "git_commit": [get_git_commit()],
+        "python_version": [platform.python_version()],
+        "pip_freeze_hash": [get_file_hash(req_path) if os.path.exists(req_path) else "unknown"],
+        "config_sha256": [get_file_hash("config.yaml")],
+        "n_rows_raw": [len(df)],
     }
     pd.DataFrame(snapshot_data).to_csv(snapshot_path, index=False)
     

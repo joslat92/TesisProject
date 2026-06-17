@@ -56,12 +56,12 @@ restauran al terminar.
   **RUN_ALL_OK en 6.1 min**, todos los gates pasados dentro del clon
   (contrato fail-fast, anti-fuga, y_true contra fuente primaria).
 - Comparación de las métricas de los modelos clásicos (RW/ARIMA/ARIMAX/
-  SARIMAX) del clon contra las del repositorio (RC2): **IDÉNTICAS** en
+  SARIMAX) del clon contra las del repositorio (RC2.1): **IDÉNTICAS** en
   `metrics_OOS.csv` y `metrics_OOS_2025.csv` (igualdad exacta de
   RMSE/MAE/MDA por horizonte) — los clásicos no dependen del flag --quick.
 - Verificado en modo rápido (no repetido en el clon por costo): los números
   LSTM (epochs=30), el walk-forward (14) y el multi-semilla (15). Esos
-  corresponden a la cadena completa con la que se generó RC2 en el
+  corresponden a la cadena completa con la que se generó RC2.1 en el
   repositorio principal (bitácora 2026-06-11/12), ejecutable con
   `run_all.py` sin flags.
 
