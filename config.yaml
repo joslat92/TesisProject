@@ -48,7 +48,11 @@ models:
       order: [1, 0, 1]
     
     sarimax:
-      order: [1, 1, 1]
+      # NOTA: el orden no-estacional (p,d,q) del SARIMAX NO se lee de aquí.
+      # Los stages 13/14/16 reutilizan arima.order [1,0,1] sobre ret_1d para
+      # mantener una sola fuente de verdad del componente ARMA; este campo
+      # quedaba muerto (y además inconsistente: [1,1,1] re-diferenciaba una
+      # serie ya estacionaria). Eliminado para evitar confusión.
       seasonal_order: [0, 1, 0, 5]
       
     lstm:
