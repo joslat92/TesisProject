@@ -48,6 +48,21 @@ no encontró evidencia (p=0.302 > 0.10); los términos m=5 no se activan y SARIM
 en la muestra. Se reporta el veredicto del gate en lugar de filas duplicadas.
 **Justificación:** aplicación literal de la regla pre-registrada en el contrato del proyecto.
 
+## D7 — Mincer–Zarnowitz adopta L=h−1 en el kernel HAC (2026-06-16)
+**Decisión:** la regresión MZ (y_t = α + β·ŷ_t + ε, en niveles) usa errores HAC con
+maxlags = h−1, en lugar del maxlags=1 fijo previo.
+**Justificación:** coherencia con el kernel del Diebold–Mariano (que ya usa L=h−1). Los
+retornos acumulados solapados inducen autocorrelación MA(h−1) en el residuo de la MZ;
+un lag fijo de 1 subestima la incertidumbre en horizontes largos. Para h=1 (sin solape)
+maxlags=0, con lo que el HAC se reduce a robustez de heterocedasticidad.
+**Impacto (verificado, no cambia ningún veredicto):** los p-valores de H0: β=1 en T+20
+pasan de ≈0.0000 a ≈0.020–0.046; los de T+10 de ≈0.0000 a ≈0.008–0.017; T+5 de
+≈0.001–0.004 a ≈0.008–0.018; T+1 sigue sin rechazarse (≈0.09–0.29). El veredicto
+cualitativo se mantiene: β=1 se rechaza al 5% desde T+5 y no se rechaza en T+1; ningún
+rechazo al 5% se invierte. Solo se regeneró reports/data/tbl_MZ_core.csv (y su copia
+mz_summary_OOS.csv); ninguna otra tabla se ve afectada.
+**Reversibilidad:** total — es un cambio de un argumento del estimador de covarianza.
+
 ---
 
 ## Adenda 2026-06-11 — actualización de D5 tras corrección del pipeline
