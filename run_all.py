@@ -43,6 +43,7 @@ STAGES = [
     ("24_wf_metrics.py", "Métricas walk-forward", False),
     ("20_evaluate_stats.py", "Evaluación consolidada + GATE completo", False),
     ("30_make_figures.py", "Figuras canónicas", False),
+    ("31_regimes.py", "Regímenes de volatilidad (§9.4)", False),
 ]
 
 PATCH_CONFIGS = ["config.yaml", "config_robustez2025.yaml"]

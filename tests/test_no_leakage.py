@@ -104,6 +104,64 @@ def test_sarimax_prediction_ignores_future():
             f"FUGA en h={h}: y_hat_t cambió al alterar retornos y exógenas > t"
         )
 
+def test_lstm_prediction_ignores_future():
+    """
+    Anti-fuga para la LSTM (cierra el hueco de cobertura señalado por las
+    auditorías): para una fecha t del OOS, corromper features Y target de
+    TODAS las filas posteriores a t no debe mover la predicción de t.
+
+    Se reentrena en modo reducido (epochs=1) con la misma semilla en ambas
+    corridas. El scaler se ajusta solo con el train (≤ train_end), el
+    entrenamiento usa solo muestras del IS, y la ventana de entrada de t
+    termina en t; nada de eso depende de filas > t, así que ŷ_t debe ser
+    bit-idéntico. Se usa la variante LSTM_FULL (ret_1d + Sent_lag1 + VIX_lag1)
+    para ejercitar también los canales exógenos.
+    """
+    os.chdir(ROOT)
+    import yaml
+    stage = _load_stage("12_train_lstm.py", "stage_12_train_lstm")
+
+    with open(ROOT / "config.yaml", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+
+    params = dict(cfg["models"]["params"]["lstm"])
+    params["epochs"] = 1  # modo reducido: rápido y determinista
+    feature_cols = params["variants"]["LSTM_FULL"]
+    seed = cfg["project"]["seed"]
+    price_col = cfg["data"]["target_col"]
+    train_end = pd.Timestamp(cfg["data"]["splits"]["train_end"])
+    oos_start = pd.Timestamp(cfg["data"]["splits"]["oos_start"])
+    oos_end = pd.Timestamp(cfg["data"]["splits"]["oos_end"])
+    h = 5
+
+    df = pd.read_parquet(ROOT / "data" / "processed" / f"features_T{h}.parquet")
+
+    # t a ~1 mes dentro del OOS, con futuro de sobra para corromper
+    oos_dates = df.loc[(df["Date"] >= oos_start) & (df["Date"] <= oos_end), "Date"]
+    t = oos_dates.iloc[20]
+    assert (df["Date"] > t).sum() > h + 5, "se necesita futuro que corromper"
+
+    base = stage.fit_predict(df, feature_cols, params, seed, h, price_col,
+                             train_end, oos_start, oos_end)
+    base_t = base.loc[base["Date"] == t, "y_pred_ret"].values
+
+    df_corrupt = df.copy()
+    fut = df_corrupt["Date"] > t
+    rng = np.random.default_rng(999)
+    cols_to_corrupt = list(feature_cols) + [f"Target_Ret_h{h}",
+                                            f"Target_Price_h{h}", price_col]
+    for c in cols_to_corrupt:
+        df_corrupt.loc[fut, c] = rng.normal(0.0, 1.0, int(fut.sum()))
+
+    corrupt = stage.fit_predict(df_corrupt, feature_cols, params, seed, h,
+                                price_col, train_end, oos_start, oos_end)
+    corrupt_t = corrupt.loc[corrupt["Date"] == t, "y_pred_ret"].values
+
+    assert np.array_equal(base_t, corrupt_t), (
+        f"FUGA LSTM: ŷ_t({t.date()}) cambió al corromper el futuro "
+        f"({base_t} vs {corrupt_t})"
+    )
+
 def test_rw_preds_are_zero_return():
     """RW del contrato: y_hat_t(h) = 0 en retornos, nivel = P_t."""
     for h in [1, 5, 10, 20]:
@@ -117,5 +175,6 @@ def test_rw_preds_are_zero_return():
 if __name__ == "__main__":
     test_arima_prediction_ignores_future()
     test_sarimax_prediction_ignores_future()
+    test_lstm_prediction_ignores_future()
     test_rw_preds_are_zero_return()
-    print("OK: sin fuga detectada (ARIMA + ARIMAX/SARIMAX + RW)")
+    print("OK: sin fuga detectada (ARIMA + ARIMAX/SARIMAX + LSTM + RW)")

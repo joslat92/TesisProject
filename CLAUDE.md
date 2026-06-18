@@ -32,14 +32,16 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
 4. **Árbol de trabajo actual (29-12-2025)**: reestructuración limpia y modular del
    pipeline, SIN commitear. Corrida preliminar solo con RW/ARIMA/LSTM. ⚠️ Sus resultados
    son SOSPECHOSOS (ver "Bug conocido") y sus figuras no son las canónicas de la tesis.
-5. **Episodio RC2 (jun-2026, rama reestructura-dic2025)**: la retoma produjo RC1
+5. **Episodio RC2.1 (jun-2026, rama reestructura-dic2025)**: la retoma produjo RC1
    (WF 12×7 + gate fail-fast); el bloque de robustez 2025 destapó el bug #2
-   (y_true desplazado en salidas LSTM) ⇒ regeneración total como **RC2**, DM con
+   (y_true desplazado en salidas LSTM) ⇒ regeneración total como **RC2.1** (rotulada
+   "RC2" en las bitácoras de jun-2026; se adopta **RC2.1** como etiqueta única,
+   alineada con config.yaml version 2.1.0), DM con
    kernel de Bartlett (el rectangular daba varianza negativa en 2025), y sellado
    2026-06-12: y_true de los 56 archivos verificado contra el CSV crudo
    (tests/test_ytrue_sanity.py en la suite del gate), reproducibilidad de punta
    a punta con run_all.py (--quick verificado en clon limpio) y requirements
-   congelado. **RC2 es el set de números del documento final** (pendiente
+   congelado. **RC2.1 es el set de números del documento final** (pendiente
    ratificación del director; ver Registro_Decisiones_1.md y bitácora).
 
 ## Bugs conocidos — ambos CORREGIDOS
@@ -60,12 +62,12 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
    idx + seq_len` + assert de fechas; guard permanente en ContractValidator
    (`_check_truth_consistency`: y_true idéntico entre modelos por horizonte,
    fail-fast). ⚠️ TODA métrica LSTM anterior al 2026-06-11 (RC1, multiseed, D5
-   del Registro de Decisiones) quedó invalidada; el set vigente es **RC2**
+   del Registro de Decisiones) quedó invalidada; el set vigente es **RC2.1**
    (bitácora 2026-06-11). Cordura post-fix OOS 2024: T=1 todos ≈0.0113; T=20
    RW .0440, ARIMA .0403 (MDA .742), LSTM .0414, LSTM_FULL .0423. DM-HLN con
    kernel de Bartlett (2026-06-12, el rectangular daba varianza negativa en
-   2025): única celda significativa al 5% es LSTM_SENT T=5 vs RW (p=0.049,
-   marginal/no-hallazgo); en T=20 mín p≈0.062. RC2 sellado 2026-06-12:
+   2025): única celda significativa al 5% es LSTM_SENT T=5 vs RW (p=0.048,
+   marginal/no-hallazgo); en T=20 mín p≈0.060. RC2.1 sellado 2026-06-12:
    y_true verificado contra fuente primaria (tests/test_ytrue_sanity.py,
    en la suite del gate).
 
@@ -117,17 +119,17 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
    con ambas columnas), test Pesaran–Timmermann (tbl_PT_OOS, indicativo en h>1),
    bloque de robustez 2025 (D3: config_robustez2025.yaml, 16_robustez_2025.py,
    metrics_OOS_2025 + tbl_DM_2025 + mensual). El bloque 2025 destapó el bug #2
-   (ver arriba); todo regenerado como ★RC2★ (reemplaza a RC1; mismas
+   (ver arriba); todo regenerado como ★RC2.1★ (reemplaza a RC1; mismas
    predicciones clásicas, métricas LSTM corregidas, ningún DM significativo).
-8. ✔ (2026-06-12) Sellado RC2: y_true verificado contra fuente primaria
+8. ✔ (2026-06-12) Sellado RC2.1: y_true verificado contra fuente primaria
    (test_ytrue_sanity.py, en gate), anomalía DM=0.0 resuelta (kernel Bartlett
    en dm.py; tablas DM regeneradas), run_all.py + requirements congelado +
    prueba de clon limpio (--quick), docs/REPRODUCIR.md.
-9. Validar RC2 con el director: D5 actualizada en el Registro (mediana p≈0.19,
+9. Validar RC2.1 con el director: D5 actualizada en el Registro (mediana p≈0.19,
    1/10 semillas <0.05, ensemble n.s.; única celda 5% es LSTM_SENT T=5 vs RW
-   p=0.049, no-hallazgo por comparaciones múltiples) y decidir narrativa final.
+   p=0.048, no-hallazgo por comparaciones múltiples) y decidir narrativa final.
 10. Seguir buscando fuera del repo el código multi-horizonte original (tablas
-    del doc "Numeros normales"). ⚠️ La estructura docs/ con material RC2 que el
+    del doc "Numeros normales"). ⚠️ La estructura docs/ con material RC2.1 que el
     autor mencionó (2026-06-12) no llegó al árbol de trabajo; solo existe
     docs/REPRODUCIR.md (creado por la tarea de reproducibilidad).
 

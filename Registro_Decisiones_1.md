@@ -48,6 +48,21 @@ no encontró evidencia (p=0.302 > 0.10); los términos m=5 no se activan y SARIM
 en la muestra. Se reporta el veredicto del gate en lugar de filas duplicadas.
 **Justificación:** aplicación literal de la regla pre-registrada en el contrato del proyecto.
 
+## D7 — Mincer–Zarnowitz adopta L=h−1 en el kernel HAC (2026-06-16)
+**Decisión:** la regresión MZ (y_t = α + β·ŷ_t + ε, en niveles) usa errores HAC con
+maxlags = h−1, en lugar del maxlags=1 fijo previo.
+**Justificación:** coherencia con el kernel del Diebold–Mariano (que ya usa L=h−1). Los
+retornos acumulados solapados inducen autocorrelación MA(h−1) en el residuo de la MZ;
+un lag fijo de 1 subestima la incertidumbre en horizontes largos. Para h=1 (sin solape)
+maxlags=0, con lo que el HAC se reduce a robustez de heterocedasticidad.
+**Impacto (verificado, no cambia ningún veredicto):** los p-valores de H0: β=1 en T+20
+pasan de ≈0.0000 a ≈0.020–0.046; los de T+10 de ≈0.0000 a ≈0.008–0.017; T+5 de
+≈0.001–0.004 a ≈0.008–0.018; T+1 sigue sin rechazarse (≈0.09–0.29). El veredicto
+cualitativo se mantiene: β=1 se rechaza al 5% desde T+5 y no se rechaza en T+1; ningún
+rechazo al 5% se invierte. Solo se regeneró reports/data/tbl_MZ_core.csv (y su copia
+mz_summary_OOS.csv); ninguna otra tabla se ve afectada.
+**Reversibilidad:** total — es un cambio de un argumento del estimador de covarianza.
+
 ---
 
 ## Adenda 2026-06-11 — actualización de D5 tras corrección del pipeline
@@ -59,11 +74,14 @@ las filas LSTM no. Todo el universo LSTM fue regenerado (set vigente: **RC2**).
 
 **Impacto sobre D5 (números corregidos, LSTM_FULL T=20 vs RW):** la dirección se
 mantiene (DM>0 en 10/10 semillas; RMSE bajo RW en 10/10), pero la significancia
-desaparece: mediana p=0.194 (antes 0.062), 1/10 semillas con p<0.05 (antes 4/10),
-ensemble p=0.140 (antes 0.049). [Números con kernel de Bartlett en la varianza
+desaparece: mediana p=0.190 (antes 0.062), 1/10 semillas con p<0.05 (antes 4/10),
+ensemble p=0.136 (antes 0.049). [Números con kernel de Bartlett en la varianza
 HAC, adoptado 2026-06-12 tras detectar varianza rectangular negativa en el bloque
-2025; detalle en bitácora.] En el OOS 2024 corregido la única celda DM-HLN
-significativa al 5% es LSTM_SENT T=5 vs RW (p=0.049, marginal; con ~36 contrastes
+2025; afinados 2026-06-16 con la convención HAC unificada del DM, ver
+docs/cierre_auditoria_2026-06-16.md — el cambio es <0.0025 y no altera veredictos.]
+En el OOS 2024
+corregido la única celda DM-HLN significativa al 5% es LSTM_SENT T=5 vs RW
+(p=0.048, marginal; con ~36 contrastes
 es compatible con ruido de comparaciones múltiples y no se propone como hallazgo).
 
 **Redacción propuesta para D5 (a ratificar):** "ventaja consistente en magnitud
@@ -82,3 +100,11 @@ a06f473** (tests/test_ytrue_sanity.py: retorno acumulado recomputado a mano desd
 data/data.csv crudo en 10 fechas aleatorias del OOS 2024 + 5 del bloque 2025 por
 horizonte, contrastado contra los 56 archivos de predicciones de los 7 modelos,
 tolerancia 1e-10; integrado a la suite permanente del gate).
+
+---
+
+## Nota de nomenclatura (2026-06-16)
+Se adopta **RC2.1** como etiqueta única del set sellado de resultados, alineada con
+`config.yaml` (version 2.1.0) y los entregables externos. "RC2" en las bitácoras y
+entradas fechadas de junio-2026 designa exactamente el mismo set; no se reescriben
+los registros históricos. El tag git anotado `RC2.1` marca el commit sellado.

@@ -2,7 +2,10 @@
 # Generado con pip freeze (filtrado) el 2026-06-12; Python 3.11, Windows.
 # torch: la versión instalada localmente es 2.9.1+cpu (rueda CPU); el sufijo
 # +cpu no existe en PyPI, por eso se fija 2.9.1 (en Windows instala la CPU).
-numpy==2.4.0
+# numpy: 2.4.0 fue RETIRADA (yanked) en PyPI por un bug de compatibilidad;
+# se fija el último parche estable de la serie 2.3.x (verificado 2026-06-16:
+# instala limpio y reproduce los números clásicos de RC2 bit a bit).
+numpy==2.3.3
 pandas==2.3.3
 scipy==1.16.3
 statsmodels==0.14.6

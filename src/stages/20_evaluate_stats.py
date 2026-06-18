@@ -29,16 +29,23 @@ def diebold_mariano_test(y_true, y_pred_base, y_pred_chal, h):
     _, _, dm_hln, p_hln = diebold_mariano(y_true, y_pred_base, y_pred_chal, h=h)
     return dm_hln, p_hln
 
-def mincer_zarnowitz_test(y_true, y_pred):
+def mincer_zarnowitz_test(y_true, y_pred, h=1):
     """
     Regresión MZ: y_true = alpha + beta * y_pred + error.
     Devuelve alpha, beta, R2, p(alpha=0), p(beta=0) y p(beta=1) — el test
     de insesgadez relevante es la pareja H0: alpha=0 y H0: beta=1.
+
+    Errores HAC con maxlags = h-1 (coherente con el kernel del DM): los
+    retornos acumulados solapados inducen autocorrelación MA(h-1) en el
+    residuo MZ, así que el lag de truncamiento debe escalar con el
+    horizonte. Para h=1 (sin solape) maxlags=0 ⇒ HAC se reduce a robustez
+    de heterocedasticidad. Antes se usaba maxlags=1 fijo, lo que subestimaba
+    la incertidumbre en horizontes largos (decisión D7, 2026-06-16).
     """
     X = sm.add_constant(y_pred)
     model = sm.OLS(y_true, X)
     try:
-        results = model.fit(cov_type='HAC', cov_kwds={'maxlags': 1})
+        results = model.fit(cov_type='HAC', cov_kwds={'maxlags': max(h - 1, 0)})
 
         alpha = results.params.iloc[0]
         beta = results.params.iloc[1] if len(results.params) > 1 else np.nan
@@ -155,7 +162,7 @@ def run_evaluation():
 
             # --- 3. MINCER-ZARNOWITZ (Sobre Niveles) ---
             alpha, beta, r2, p_a, p_b0, p_b1 = mincer_zarnowitz_test(
-                df['y_true_level'], df['y_pred_level'])
+                df['y_true_level'], df['y_pred_level'], h=h)
             mz_data.append({
                 'Horizon': h,
                 'Model': model,

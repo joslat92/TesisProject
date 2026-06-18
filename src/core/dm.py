@@ -40,11 +40,19 @@ def diebold_mariano(y_true, y_pred_bench, y_pred_chall, h=1):
     # truncamiento L = h−1. El kernel rectangular del DM(1995) original
     # puede arrojar varianza NEGATIVA (ocurrió con n=55, h=20 en el bloque
     # 2025 ⇒ DM espurio = 0.0); Bartlett garantiza semidefinida positiva.
-    gamma_0 = np.var(d)
+    #
+    # Convención única (Newey-West de libro): todas las autocovarianzas se
+    # estiman con la MEDIA GLOBAL d̄ y se dividen por n (ddof=0). Antes
+    # gamma_0 usaba np.var (media global, ÷n) pero las autocovarianzas
+    # usaban np.cov (media por subserie, ÷(n_pairs−1)), una mezcla
+    # inconsistente; el impacto numérico es <0.002 y no altera veredictos.
+    d_dm = d - mean_d
+    gamma_0 = np.dot(d_dm, d_dm) / n
     gamma_sum = 0.0
     for lag in range(1, h):
         w = 1.0 - lag / h
-        gamma_sum += w * np.cov(d[lag:], d[:-lag])[0][1]
+        gamma_lag = np.dot(d_dm[lag:], d_dm[:-lag]) / n
+        gamma_sum += w * gamma_lag
     var_d = (gamma_0 + 2 * gamma_sum) / n
 
     if var_d <= 1e-16:
