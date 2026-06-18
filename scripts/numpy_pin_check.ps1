@@ -32,7 +32,7 @@ Push-Location $repo
 & $py src\stages\13_train_sarimax.py | Out-Null
 Pop-Location
 
-Write-Host "[5/5] Diff de determinismo (preds clasicas vs RC2 committeado)..."
+Write-Host "[5/5] Diff de determinismo (preds clasicas vs RC2.1 committeado)..."
 Push-Location $repo
 $diff = git status --short "outputs/preds/OOS/preds_T1_RW.csv" "outputs/preds/OOS/preds_T20_ARIMA.csv" "outputs/preds/OOS/preds_T20_ARIMAX.csv" "outputs/preds/OOS/preds_T20_SARIMAX.csv" "outputs/preds/OOS/preds_T5_ARIMA.csv"
 $diffAll = git status --short "outputs/preds/OOS/"
@@ -40,7 +40,7 @@ git checkout -- "outputs/preds/OOS/" 2>$null
 Pop-Location
 
 if ([string]::IsNullOrWhiteSpace($diffAll)) {
-    Write-Host "   Predicciones clasicas: IDENTICAS a RC2 (numpy 2.3.3 reproduce los numeros)"
+    Write-Host "   Predicciones clasicas: IDENTICAS a RC2.1 (numpy 2.3.3 reproduce los numeros)"
     Write-Host "NUMPYCHECK_OK"
 } else {
     Write-Host "   ATENCION: cambiaron predicciones:"
