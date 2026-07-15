@@ -9,7 +9,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from src.core.contract import ContractValidator
 
 def load_config():
-    # AGREGAR EL PARÁMETRO encoding="utf-8"
     with open("config.yaml", "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 

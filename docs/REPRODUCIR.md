@@ -10,8 +10,8 @@ Instrucciones verificadas en limpio el 2026-06-12 (Windows 11, Python 3.11).
 ## Pasos exactos
 
 ```powershell
-# 1. Clonar (rama de la reestructuración)
-git clone --branch reestructura-dic2025 https://github.com/joslat92/TesisProject.git
+# 1. Clonar la rama corregida
+git clone --branch correcciones-auditoria-final https://github.com/joslat92/TesisProject.git
 cd TesisProject
 
 # 2. Entorno congelado
@@ -45,10 +45,11 @@ gates.
 | Preparación de datos, RW, ARIMA, ARIMAX/SARIMAX (OOS 2024 y 2025) | ✔ números EXACTOS de la tesis (deterministas) | ✔ |
 | Gates (contrato, anti-fuga, y_true vs fuente primaria) | ✔ completos | ✔ |
 | Variantes LSTM | mecánica ✔, números NO (epochs=2) | ✔ (epochs=30, seed 42) |
-| Walk-forward (14) y multi-semilla (15) | omitidos | ✔ |
+| Walk-forward (14), sus métricas (24) y multi-semilla (15) | omitidos | ✔ |
 
-En `--quick` los configs se parchean en memoria de la corrida (epochs=2) y se
-restauran al terminar.
+En `--quick` se crea una copia temporal aislada del repositorio. Los configs de
+esa copia se parchean a `epochs=2`; al terminar, la copia completa se elimina.
+Los artefactos canónicos del árbol principal no se leen ni se sobrescriben.
 
 ## Verificación realizada (2026-06-12, script: scripts/cleanroom_test.ps1)
 - Clon limpio en carpeta temporal + venv desde cero + `pip install -r

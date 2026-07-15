@@ -11,20 +11,24 @@ y figuras (reports/figs):
 Uso:
     python run_all.py            # reproducción COMPLETA (horas: WF 144 + multiseed 120)
     python run_all.py --quick    # verificación de mecánica (~15-25 min):
-                                 #  - omite walk-forward (14) y multi-semilla (15)
-                                 #  - LSTM con epochs=2 (parchea config.yaml y
-                                 #    config_robustez2025.yaml, restaura al salir)
+                                 #  - corre en una copia temporal aislada
+                                 #  - omite walk-forward (14), sus métricas (24)
+                                 #    y multi-semilla (15)
+                                 #  - LSTM con epochs=2 dentro de esa copia
                                  # Los números --quick NO son los de la tesis; los
                                  # clásicos (RW/ARIMA/ARIMAX/SARIMAX) sí son exactos
                                  # porque no dependen de los epochs del LSTM.
+                                 # Ningún artefacto canónico se sobrescribe.
 
 El gate del pipeline (contrato + anti-fuga + cordura de y_true contra la fuente
 primaria) corre dentro de 20_evaluate_stats y detiene todo si falla.
 """
 import argparse
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import yaml
 from pathlib import Path
@@ -40,7 +44,7 @@ STAGES = [
     ("14_walkforward.py", "Walk-forward 12 bloques x 7 modelos", True),
     ("15_multiseed_lstm.py", "Multi-semilla LSTM (120 entrenamientos)", True),
     ("16_robustez_2025.py", "Bloque de robustez 2025", False),
-    ("24_wf_metrics.py", "Métricas walk-forward", False),
+    ("24_wf_metrics.py", "Métricas walk-forward", True),
     ("20_evaluate_stats.py", "Evaluación consolidada + GATE completo", False),
     ("30_make_figures.py", "Figuras canónicas", False),
     ("31_regimes.py", "Regímenes de volatilidad (§9.4)", False),
@@ -48,6 +52,35 @@ STAGES = [
 
 PATCH_CONFIGS = ["config.yaml", "config_robustez2025.yaml"]
 QUICK_EPOCHS = 2
+QUICK_OUTPUT_DIRS = (
+    "outputs/preds/OOS",
+    "outputs/preds/WF",
+    "reports/data",
+    "reports/figs",
+    "logs",
+)
+
+
+def run_quick_isolated():
+    """Ejecuta el smoke test en una copia temporal sin tocar artefactos sellados."""
+    ignore = shutil.ignore_patterns(
+        ".git", ".venv", "venv", "__pycache__", ".pytest_cache",
+        "outputs", "reports", "logs", "*.docx", "*.pdf", "*.zip",
+    )
+    with tempfile.TemporaryDirectory(prefix="tesis-quick-") as tmp:
+        sandbox = Path(tmp) / ROOT.name
+        print(f">>> [quick] creando copia aislada en {sandbox}")
+        shutil.copytree(ROOT, sandbox, ignore=ignore)
+        for relative_dir in QUICK_OUTPUT_DIRS:
+            (sandbox / relative_dir).mkdir(parents=True, exist_ok=True)
+        result = subprocess.run(
+            [sys.executable, str(sandbox / "run_all.py"),
+             "--quick", "--quick-worker"],
+            cwd=sandbox,
+        )
+        if result.returncode != 0:
+            raise SystemExit(result.returncode)
+    print(">>> [quick] copia temporal eliminada; artefactos canónicos intactos")
 
 def patch_configs_quick():
     """Baja epochs del LSTM para la verificación rápida; devuelve backups."""
@@ -75,7 +108,13 @@ def main():
     ap = argparse.ArgumentParser(description="Reproducción de punta a punta")
     ap.add_argument("--quick", action="store_true",
                     help="verificación rápida: sin WF/multiseed, LSTM epochs=2")
+    ap.add_argument("--quick-worker", action="store_true",
+                    help=argparse.SUPPRESS)
     args = ap.parse_args()
+
+    if args.quick and not args.quick_worker:
+        run_quick_isolated()
+        return
 
     mode = "QUICK (verificación de mecánica)" if args.quick else "COMPLETO"
     print(f"=== run_all: modo {mode} ===")
@@ -91,9 +130,13 @@ def main():
                 continue
             print(f"\n--- {filename}: {desc}")
             t = time.time()
+            env = os.environ.copy()
+            if args.quick:
+                env["TESIS_QUICK_MODE"] = "1"
             result = subprocess.run(
                 [sys.executable, str(ROOT / "src" / "stages" / filename)],
                 cwd=ROOT,
+                env=env,
             )
             if result.returncode != 0:
                 print(f"\n[FALLO] {filename} terminó con código {result.returncode}. "

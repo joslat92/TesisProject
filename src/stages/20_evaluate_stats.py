@@ -42,25 +42,30 @@ def mincer_zarnowitz_test(y_true, y_pred, h=1):
     de heterocedasticidad. Antes se usaba maxlags=1 fijo, lo que subestimaba
     la incertidumbre en horizontes largos (decisión D7, 2026-06-16).
     """
+    y_true = pd.Series(y_true, dtype=float).reset_index(drop=True)
+    y_pred = pd.Series(y_pred, dtype=float).reset_index(drop=True)
+    if len(y_true) != len(y_pred) or len(y_true) < 3:
+        raise ValueError("MZ requiere vectores de igual longitud y al menos 3 observaciones.")
+    if not np.isfinite(y_true).all() or not np.isfinite(y_pred).all():
+        raise ValueError("MZ no admite NaN o infinitos.")
+    if y_pred.nunique() < 2:
+        raise ValueError("MZ requiere variación en el pronóstico.")
+
     X = sm.add_constant(y_pred)
     model = sm.OLS(y_true, X)
-    try:
-        results = model.fit(cov_type='HAC', cov_kwds={'maxlags': max(h - 1, 0)})
+    results = model.fit(cov_type='HAC', cov_kwds={'maxlags': max(h - 1, 0)})
 
-        alpha = results.params.iloc[0]
-        beta = results.params.iloc[1] if len(results.params) > 1 else np.nan
-        r2 = results.rsquared
-        p_alpha = results.pvalues.iloc[0]
-        p_beta0 = results.pvalues.iloc[1] if len(results.pvalues) > 1 else np.nan
-        # H0: beta = 1 (t robusto HAC)
-        se_beta = results.bse.iloc[1] if len(results.bse) > 1 else np.nan
-        if np.isfinite(se_beta) and se_beta > 0:
-            t_b1 = (beta - 1.0) / se_beta
-            p_beta1 = 2 * (1 - stats.t.cdf(np.abs(t_b1), df=results.df_resid))
-        else:
-            p_beta1 = np.nan
-    except Exception:
-        return (np.nan,) * 6
+    alpha = results.params.iloc[0]
+    beta = results.params.iloc[1]
+    r2 = results.rsquared
+    p_alpha = results.pvalues.iloc[0]
+    p_beta0 = results.pvalues.iloc[1]
+    # H0: beta = 1 (t robusto HAC)
+    se_beta = results.bse.iloc[1]
+    p_beta1 = np.nan
+    if np.isfinite(se_beta) and se_beta > 0:
+        t_b1 = (beta - 1.0) / se_beta
+        p_beta1 = 2 * (1 - stats.t.cdf(np.abs(t_b1), df=results.df_resid))
 
     return alpha, beta, r2, p_alpha, p_beta0, p_beta1
 
@@ -100,7 +105,7 @@ def run_evaluation():
             filepath = os.path.join(preds_dir, filename)
 
             if not os.path.exists(filepath):
-                continue
+                raise FileNotFoundError(f"Falta predicción requerida: {filepath}")
 
             df = pd.read_csv(filepath)
 

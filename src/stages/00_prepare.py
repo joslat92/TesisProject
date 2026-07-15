@@ -49,12 +49,20 @@ def run_prepare():
     df = df.sort_values('Date').reset_index(drop=True)
     
     # 2. Validaciones Iniciales (Fail-fast)
-    required_cols = ['Date', cfg['data']['target_col']]
+    exog_config = cfg['features']['exog']
+    required_cols = ['Date', cfg['data']['target_col'], *exog_config.keys()]
     if not all(col in df.columns for col in required_cols):
         raise ValueError(f"Faltan columnas en raw data. Requeridas: {required_cols}")
+    if df['Date'].isna().any() or df['Date'].duplicated().any():
+        raise ValueError("Date contiene nulos o duplicados.")
+
+    target_col = cfg['data']['target_col']
+    if df[target_col].isna().any() or (df[target_col] <= 0).any():
+        raise ValueError(f"{target_col} debe ser numérico, positivo y no nulo.")
+    if df[list(exog_config)].isna().any().any():
+        raise ValueError("Las variables exógenas contienen valores nulos.")
 
     # 3. Transformaciones Base
-    target_col = cfg['data']['target_col']
     df['logP'] = np.log(df[target_col])
     
     # Retorno diario (1-day) para features de entrada
@@ -62,15 +70,10 @@ def run_prepare():
     
     # 4. Generación de Features Exógenas (Lags)
     # Según config: features -> exog
-    exog_config = cfg['features']['exog']
     feature_cols = ['ret_1d'] # Base features
     
     print("    Generando lags exógenos...")
     for col, lags in exog_config.items():
-        if col not in df.columns:
-            print(f"    [WARN] Exógena {col} no encontrada en raw data. Saltando.")
-            continue
-            
         for lag in lags:
             feat_name = f"{col}_lag{lag}"
             df[feat_name] = df[col].shift(lag)

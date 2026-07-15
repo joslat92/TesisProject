@@ -75,14 +75,14 @@ def _check_dir(preds_dir, n_dates):
 
 def test_ytrue_oos_2024_contra_fuente_primaria():
     preds_dir = ROOT / "outputs" / "preds" / "OOS"
-    if not preds_dir.exists():
+    if not any(preds_dir.glob("preds_T*.csv")):
         pytest.skip("aún no se generó el OOS 2024")
     n = _check_dir(preds_dir, n_dates=10)
     assert n >= 4, "se esperaban archivos para los 4 horizontes"
 
 def test_ytrue_bloque_2025_contra_fuente_primaria():
     preds_dir = ROOT / "outputs" / "preds" / "OOS_2025"
-    if not preds_dir.exists():
+    if not any(preds_dir.glob("preds_T*.csv")):
         pytest.skip("aún no se generó el bloque 2025")
     n = _check_dir(preds_dir, n_dates=5)
     assert n >= 4, "se esperaban archivos para los 4 horizontes"

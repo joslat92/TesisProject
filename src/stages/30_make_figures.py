@@ -106,20 +106,21 @@ def fig_calibracion_scatter(cfg, h, figs_dir, models, df_mz):
             ax.axis('off')
             continue
         df = pd.read_csv(fpath)
-        ax.scatter(df['y_true_ret'], df['y_pred_ret'], alpha=0.45, s=14,
+        ax.scatter(df['y_true_level'], df['y_pred_level'], alpha=0.45, s=14,
                    color='purple')
-        lim = max(df['y_true_ret'].abs().max(), df['y_pred_ret'].abs().max()) * 1.1
-        ax.plot([-lim, lim], [-lim, lim], color='gray', linestyle='--', linewidth=0.9)
-        ax.axhline(0, color='black', linewidth=0.6)
-        ax.axvline(0, color='black', linewidth=0.6)
-        ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
+        low = min(df['y_true_level'].min(), df['y_pred_level'].min())
+        high = max(df['y_true_level'].max(), df['y_pred_level'].max())
+        margin = (high - low) * 0.05
+        ax.plot([low, high], [low, high], color='gray', linestyle='--', linewidth=0.9)
+        ax.set_xlim(low - margin, high + margin)
+        ax.set_ylim(low - margin, high + margin)
         title = model
         if df_mz is not None:
             row = df_mz[(df_mz['Horizon'] == h) & (df_mz['Model'] == model)]
             if not row.empty:
                 title += f"  (alpha={row['Alpha'].iloc[0]:.3f}, beta={row['Beta'].iloc[0]:.2f})"
         ax.set_title(title, fontsize=10)
-        ax.set_xlabel('retorno real'); ax.set_ylabel('retorno predicho')
+        ax.set_xlabel('nivel real'); ax.set_ylabel('nivel pronosticado')
         plotted = True
     for ax in axes[n:]:
         ax.axis('off')

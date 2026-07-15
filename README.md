@@ -5,7 +5,7 @@ con modelos clasicos de series de tiempo y variantes LSTM con variables exogenas
 
 ## Estado actual
 
-- Rama de limpieza: `limpieza-repo-final`
+- Rama de correcciones: `correcciones-auditoria-final`
 - Documento final editable: `Tesis Maestro Final.docx`
 - Set de resultados vigente: RC2.1
 - Estudio principal: OOS 2024, horizontes `T in {1, 5, 10, 20}`
@@ -32,6 +32,10 @@ En PowerShell, desde la raiz del repositorio:
 
 La corrida completa sin `--quick` reproduce tambien los bloques costosos de LSTM,
 walk-forward y multi-semilla.
+
+El modo `--quick` crea una copia temporal del proyecto, ejecuta allí el smoke test
+y elimina la copia al terminar. No modifica `outputs/`, `reports/` ni los YAML del
+árbol de trabajo principal.
 
 ## Notas de limpieza
 

@@ -27,7 +27,7 @@ features:
   
   target_transform: "log_return_accumulated"
 
-# --- 3. MODELOS Y PARÁMETROS (¡Sección Recuperada!) ---
+# --- 3. MODELOS Y PARÁMETROS ---
 models:
   active_models:
     - RW
