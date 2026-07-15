@@ -68,6 +68,6 @@ restauran al terminar.
 ## Notas de entorno
 - Los resultados LSTM son deterministas dada la semilla en CPU con estas
   versiones; cambios de versión de torch pueden mover decimales.
-- `data/data.csv` (= `data/raw/data.csv`) viaja en el repositorio; el snapshot
+- `data/raw/data.csv` viaja en el repositorio como fuente primaria; el snapshot
   de reproducibilidad (hash SHA-256 del crudo) queda en
   `reports/data/metadata_snapshot.csv`.

@@ -73,12 +73,13 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
 
 ## Especificación canónica (fuente de la verdad)
 
-- `contrato.docx` — contrato de diseño: esquema de predicciones (Date, h, model,
-  y_true_ret, y_pred_ret, y_true_level, y_pred_level [+block en WF]), naming
-  (preds_T{h}_{model}.csv / preds_T{h}_{model}_block{b}.csv), splits (IS→2023-12-29,
-  OOS 2024, WF 12 bloques), escalado train-only sin fuga, DM HAC L=h−1, MZ, regímenes.
-- `Contrato_Control_actualizado.xlsx` — libro de control (SSOT) con errores conocidos.
-- `pasos replicacion 220925 2230.xlsx` — guía de replicación etapa por etapa.
+- `config.yaml` — SSOT de datos, particiones, modelos activos, rutas y parámetros.
+- `src/core/contract.py` — contrato ejecutable del pipeline: esquema de predicciones,
+  naming, columnas obligatorias, consistencia de `y_true`, gates anti-fuga y fail-fast.
+- `docs/REPRODUCIR.md` — guía vigente de reproducción de punta a punta.
+- Los documentos históricos de control (`contrato.docx`, `Contrato_Control_actualizado.xlsx`
+  y `pasos replicacion 220925 2230.xlsx`) se retiraron de la rama limpia; permanecen en
+  el historial Git previo para consulta arqueológica si hiciera falta.
 - HPs LSTM canónicos (los del documento de tesis, salvo que el director indique otro):
   window=40, hidden=64, dropout=0.2, Adam lr=0.001, epochs=30, batch=64, seed=42,
   early-stopping con val 20%.
@@ -89,7 +90,8 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
   apuntando a la versión pre-reestructuración hasta que se valide la nueva.
 - Trabajar la reestructuración en la rama `reestructura-dic2025`.
 - Commit + push al final de CADA sesión de trabajo.
-- Todo cambio al pipeline debe respetar el contrato (contrato.docx §8 y §11).
+- Todo cambio al pipeline debe respetar `config.yaml` y el contrato ejecutable
+  (`src/core/contract.py`).
 - Sin fuga de información: scalers y selección de hiperparámetros solo con IS o bloque
   WF previo; exógenas siempre rezagadas.
 - Sesiones de ~2 horas diarias. Mantener bitácora en `logs/bitacora.md` (qué se hizo,
@@ -113,8 +115,8 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
    exógena/tuning distintos) — contrastar cuando aparezca el código original.
 6. ✔ (2026-06-10) ★RC1 de resultados★: WF 2024 completo (12 bloques × 7 modelos,
    336 archivos, re-fit/scalers por bloque), DM vs RW y vs SARIMAX, MZ con p(β=1),
-   tablas consolidadas en reports/data y 25 figuras canónicas en reports/figs
-   (las buggy del 29-12 en _archive_corrida_buggy_20251229/). Ver bitácora.
+   tablas consolidadas en reports/data y 25 figuras canónicas en reports/figs.
+   La corrida buggy del 29-12 se conserva solo en el historial Git. Ver bitácora.
 7. ✔ (2026-06-11) Cierre Fase 3: DM clásico+HLN en src/core/dm.py (tbl_DM_OOS
    con ambas columnas), test Pesaran–Timmermann (tbl_PT_OOS, indicativo en h>1),
    bloque de robustez 2025 (D3: config_robustez2025.yaml, 16_robustez_2025.py,
@@ -135,7 +137,7 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
 
 ## Datos
 
-- `data/data.csv` (= data/raw/data.csv): 2,561 obs diarias, 2015-02-17 a 2025-04-22.
+- `data/raw/data.csv`: 2,561 obs diarias, 2015-02-17 a 2025-04-22.
   Columnas: Date, Target_Price, Sentiment_GDELT, VIX_Close, logP, ret_log.
 - El estudio principal usa OOS=2024. Los datos de ene–abr 2025 (incluyen el shock de
   volatilidad de abril) quedan reservados para un bloque opcional de robustez.

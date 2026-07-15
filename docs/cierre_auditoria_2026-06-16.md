@@ -37,7 +37,7 @@ igual que el DM. Ahora `maxlags = max(h−1, 0)`.
 | 20 | ~0.0000 | **~0.020 – 0.046** | se rechaza (igual) |
 
 β=1 se rechaza al 5% desde T+5; en T+1 no se rechaza. Ningún rechazo al 5% se
-invierte. Solo se regeneró `tbl_MZ_core.csv` (y su copia `mz_summary_OOS.csv`).
+invierte. En esta rama limpia se conserva `tbl_MZ_core.csv` como salida MZ canónica.
 
 ## 2. Pin de numpy
 
@@ -50,7 +50,7 @@ regeneradas con 2.3.3 son **bit a bit idénticas** a RC2.1. No cambia ningún n�
 ## 3. Código muerto
 
 Verificado con grep que no se importa en el pipeline vigente (solo aparecía en el
-snapshot textual `Auditoria_Proyecto_Tesis.txt`):
+snapshot textual histórico retirado de la rama limpia):
 - `src/core/mz.py` (β=0 con HC3) — borrado; el MZ real (β=1, HAC) vive en el stage 20.
 - `calculate_metrics` de `metrics.py` (MDA por diff de niveles) — borrada; la MDA real
   es por signo del retorno en el stage 20.

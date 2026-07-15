@@ -59,8 +59,8 @@ maxlags=0, con lo que el HAC se reduce a robustez de heterocedasticidad.
 pasan de ≈0.0000 a ≈0.020–0.046; los de T+10 de ≈0.0000 a ≈0.008–0.017; T+5 de
 ≈0.001–0.004 a ≈0.008–0.018; T+1 sigue sin rechazarse (≈0.09–0.29). El veredicto
 cualitativo se mantiene: β=1 se rechaza al 5% desde T+5 y no se rechaza en T+1; ningún
-rechazo al 5% se invierte. Solo se regeneró reports/data/tbl_MZ_core.csv (y su copia
-mz_summary_OOS.csv); ninguna otra tabla se ve afectada.
+rechazo al 5% se invierte. En la rama limpia se conserva reports/data/tbl_MZ_core.csv
+como salida MZ canónica; ninguna otra tabla se ve afectada.
 **Reversibilidad:** total — es un cambio de un argumento del estimador de covarianza.
 
 ---
@@ -97,7 +97,7 @@ error (el guard de consistencia de y_true queda permanente en el validador).
 
 **RC2 sellado: y_true verificado contra fuente primaria el 2026-06-12, commit
 a06f473** (tests/test_ytrue_sanity.py: retorno acumulado recomputado a mano desde
-data/data.csv crudo en 10 fechas aleatorias del OOS 2024 + 5 del bloque 2025 por
+data/raw/data.csv crudo en 10 fechas aleatorias del OOS 2024 + 5 del bloque 2025 por
 horizonte, contrastado contra los 56 archivos de predicciones de los 7 modelos,
 tolerancia 1e-10; integrado a la suite permanente del gate).
 

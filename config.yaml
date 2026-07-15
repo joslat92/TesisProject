@@ -86,7 +86,7 @@ paths:
   metrics_oos: "reports/data/metrics_OOS.csv"
   metrics_wf:  "reports/data/metrics_WF.csv"
   dm_results:  "reports/data/dm_summary.csv"
-  mz_results:  "reports/data/mz_summary_OOS.csv"
+  mz_results:  "reports/data/tbl_MZ_core.csv"
 
 # --- 5. CONTRATO (VALIDACIONES) ---
 contract:

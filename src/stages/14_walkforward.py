@@ -2,7 +2,7 @@
 Stage 14 — Walk-forward 2024 (12 bloques mensuales) para los 7 modelos
 efectivos: RW, ARIMA, ARIMAX, SARIMAX, LSTM, LSTM_SENT, LSTM_FULL.
 
-Contrato (contrato.docx §8):
+Contrato ejecutable (src/core/contract.py):
 - Bloque b = mes b de 2024. Parámetros/scalers/HPs SOLO con IS + bloques
   previos (fit_upto / train_end = último día hábil ANTERIOR al bloque).
 - Dentro del bloque, los clásicos re-filtran diariamente con información <= t
