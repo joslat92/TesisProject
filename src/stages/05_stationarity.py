@@ -42,7 +42,7 @@ def main() -> None:
         ("Fig_appendix_acf_level.png", plot_acf, "ACF - Precio NASDAQ-100 (nivel)"),
         ("Fig_appendix_pacf_level.png", plot_pacf, "PACF - Precio NASDAQ-100 (nivel)"),
     ):
-        fig, ax = plt.subplots(figsize=(8, 5))
+        fig, ax = plt.subplots(figsize=(8, 6))
         plotter(level, lags=40, ax=ax)
         ax.set_title(title)
         fig.tight_layout()

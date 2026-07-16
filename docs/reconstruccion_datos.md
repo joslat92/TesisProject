@@ -121,10 +121,12 @@ Dos corridas independientes produjeron 512/512 predicciones y 14/14 tablas
 comparables identicas byte por byte. Veinticinco de 26 figuras tambien fueron
 identicas. La unica diferencia era el jitter no sembrado del boxplot
 multi-semilla; tras fijar la semilla, dos regeneraciones consecutivas dieron el
-mismo SHA-256. El manifiesto `data/manifests/reproduction_results.json` sella
-dataset, artefactos, tablas y resultados clave.
+mismo SHA-256. Los diagnosticos ADF/KPSS, los correlogramas y el resumen
+multi-semilla por variante se agregaron despues de esa comparacion. El manifiesto
+final `data/manifests/reproduction_results.json` sella 17 tablas, 28 figuras,
+dataset, artefactos y resultados clave.
 
-## Estado y decisiones pendientes
+## Estado y decisiones
 
 | Componente | Estado | Evidencia o bloqueo |
 | --- | --- | --- |
@@ -137,8 +139,9 @@ dataset, artefactos, tablas y resultados clave.
 | Scope GDELT | Sellado | `nasdaq_market`, sin usar rendimiento predictivo |
 | Dataset curado | Sellado | 2.558 filas y SHA-256 versionado |
 | Nueva corrida del pipeline | Completada | Todas las etapas y gate final ejecutados |
-| Actualizacion de la tesis | Pendiente | Debe reemplazar cifras, tablas, figuras y conclusiones heredadas |
+| Actualizacion de la tesis | Completada | `Tesis Maestro Final - Datos Reconstruidos.docx`, 53 paginas verificadas |
 
-No deben reutilizarse cifras, conclusiones ni afirmaciones del documento de
-tesis que procedan del dataset heredado. La actualizacion se realizara solo con
-los artefactos sellados de esta reproduccion.
+No deben reutilizarse cifras, conclusiones ni afirmaciones de versiones de la
+tesis que procedan del dataset heredado. La version reconstruida usa solo los
+artefactos sellados de esta reproduccion; el maestro anterior se conserva como
+evidencia historica y no como fuente de resultados vigentes.

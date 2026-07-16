@@ -90,10 +90,11 @@ Reproduccion completa recomendada:
 fechada dentro de `_run_archive/`, recrea los directorios vacios y ejecuta todas
 las etapas. No borra los resultados anteriores. No se combina con `--quick`.
 
-La cadena completa incluye preparacion, RW, ARIMA, ARIMAX/SARIMAX, variantes
-LSTM, walk-forward, multi-semilla, robustez 2025, evaluacion, figuras y
-regimenes. Se detiene ante cualquier codigo de salida distinto de cero. El gate
-final valida contrato, ausencia de fuga y `y_true` contra el dataset configurado.
+La cadena completa incluye preparacion, diagnostico ADF/KPSS y correlogramas,
+RW, ARIMA, ARIMAX/SARIMAX, variantes LSTM, walk-forward, multi-semilla,
+robustez 2025, evaluacion, figuras y regimenes. Se detiene ante cualquier codigo
+de salida distinto de cero. El gate final valida contrato, ausencia de fuga y
+`y_true` contra el dataset configurado.
 
 ## Salidas
 
@@ -101,8 +102,10 @@ final valida contrato, ausencia de fuga y `y_true` contra el dataset configurado
 - `outputs/preds/WF/`: 336 archivos walk-forward.
 - `outputs/preds/MULTISEED/`: 120 archivos LSTM por semilla.
 - `outputs/preds/OOS_2025/`: 28 archivos de robustez.
-- `reports/data/`: metricas, DM-HLN, MZ, PT y resumenes.
-- `reports/figs/`: figuras canonicas y boxplot multi-semilla.
+- `reports/data/`: metricas, DM-HLN, MZ, PT, ADF/KPSS y resumenes.
+- `reports/figs/`: 28 figuras selladas, incluidos boxplot y correlogramas.
+- `Tesis Maestro Final - Datos Reconstruidos.docx`: tesis actualizada; el maestro
+  sin sufijo se conserva intacto como antecedente.
 
 ## Validacion efectuada
 
@@ -118,8 +121,11 @@ Las 512 predicciones y las 14 tablas comparables fueron identicas byte por byte
 en dos corridas independientes. Veinticinco de las 26 figuras tambien fueron
 identicas. El boxplot multi-semilla diferia porque el jitter grafico no fijaba
 semilla; se corrigio y dos regeneraciones consecutivas produjeron el mismo
-SHA-256. `data/manifests/reproduction_results.json` sella los hashes finales.
+SHA-256. Luego se agregaron ADF/KPSS, dos correlogramas y el resumen
+multi-semilla por variante. `data/manifests/reproduction_results.json` sella los
+hashes finales de 17 tablas y 28 figuras.
 
 Los resultados reconstruidos no coinciden con RC2.1, porque RC2.1 provenia del
 dataset heredado. `docs/reconstruccion_datos.md` resume las diferencias y su
-interpretacion; el documento Word debe citar solo los artefactos reconstruidos.
+interpretacion. La version Word vigente es
+`Tesis Maestro Final - Datos Reconstruidos.docx`.
