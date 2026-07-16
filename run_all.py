@@ -1,15 +1,17 @@
 """
 Apéndice B — Reproducción de punta a punta con un solo comando.
 
-Ejecuta la cadena completa desde data/raw/data.csv hasta tablas (reports/data)
+Ejecuta la cadena completa desde la fuente configurada hasta tablas (reports/data)
 y figuras (reports/figs):
 
     00_prepare -> 10_baselines -> 11_train_arima -> 13_train_sarimax ->
     12_train_lstm -> 14_walkforward -> 15_multiseed_lstm -> 16_robustez_2025 ->
-    24_wf_metrics -> 20_evaluate_stats (gate completo) -> 30_make_figures
+    24_wf_metrics -> 20_evaluate_stats (gate completo) -> 30_make_figures ->
+    31_regimes
 
 Uso:
-    python run_all.py            # reproducción COMPLETA (horas: WF 144 + multiseed 120)
+    python run_all.py --fresh    # completa y archiva artefactos previos
+    python run_all.py            # completa sin archivar (artefactos compatibles)
     python run_all.py --quick    # verificación de mecánica (~15-25 min):
                                  #  - corre en una copia temporal aislada
                                  #  - omite walk-forward (14), sus métricas (24)
@@ -31,6 +33,7 @@ import sys
 import tempfile
 import time
 import yaml
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -59,6 +62,33 @@ QUICK_OUTPUT_DIRS = (
     "reports/figs",
     "logs",
 )
+FRESH_DIRS = ("data/processed", "outputs", "reports", "logs")
+
+
+def configured_data_source(root=ROOT):
+    with open(root / "config.yaml", "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    return root / cfg["data"]["raw_source"]
+
+
+def archive_generated_artifacts(root=ROOT, timestamp=None):
+    """Archive generated trees before a clean full run; never delete them."""
+    stamp = timestamp or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archive = root / "_run_archive" / stamp
+    if archive.exists():
+        raise FileExistsError(f"El archivo de corrida ya existe: {archive}")
+
+    moved = []
+    for relative in FRESH_DIRS:
+        source = root / relative
+        destination = archive / relative
+        if source.exists():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(destination))
+            moved.append(relative)
+        source.mkdir(parents=True, exist_ok=True)
+    print(f">>> [fresh] artefactos previos archivados en {archive}")
+    return archive, moved
 
 
 def run_quick_isolated():
@@ -110,11 +140,26 @@ def main():
                     help="verificación rápida: sin WF/multiseed, LSTM epochs=2")
     ap.add_argument("--quick-worker", action="store_true",
                     help=argparse.SUPPRESS)
+    ap.add_argument("--fresh", action="store_true",
+                    help="archiva outputs/reports/procesados/logs antes de la corrida completa")
     args = ap.parse_args()
+
+    if args.quick and args.fresh:
+        ap.error("--fresh no se combina con --quick; --quick ya corre aislado")
+
+    source = configured_data_source()
+    if not source.exists():
+        raise SystemExit(
+            f"[FALLO] No existe el dataset configurado: {source}\n"
+            "Reconstruyalo siguiendo docs/reconstruccion_datos.md antes de ejecutar el pipeline."
+        )
 
     if args.quick and not args.quick_worker:
         run_quick_isolated()
         return
+
+    if args.fresh:
+        archive_generated_artifacts()
 
     mode = "QUICK (verificación de mecánica)" if args.quick else "COMPLETO"
     print(f"=== run_all: modo {mode} ===")

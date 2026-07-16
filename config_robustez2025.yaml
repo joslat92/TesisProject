@@ -10,7 +10,7 @@ project:
   seed: 42
 
 data:
-  raw_source: "data/raw/data.csv"
+  raw_source: "data/curated/model_input_ndx.csv"
   freq: "B"
   target_col: "Target_Price"
 

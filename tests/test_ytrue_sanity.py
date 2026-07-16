@@ -1,7 +1,7 @@
 """
 Verificación independiente de cordura del y_true (sellado RC2).
 
-Recomputa A MANO el retorno logarítmico acumulado desde data/raw/data.csv crudo
+Recomputa A MANO el retorno logarítmico acumulado desde la fuente configurada
 —solo pandas/numpy sobre el CSV, sin pasar por ningún módulo del pipeline—
 y lo compara contra y_true_ret de los archivos de predicciones de TODOS los
 modelos: 10 fechas aleatorias del OOS 2024 y 5 del bloque 2025, por horizonte.
@@ -20,13 +20,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 HORIZONS = [1, 5, 10, 20]
 RNG_SEED = 20260612
 
 def _load_raw():
-    raw = pd.read_csv(ROOT / "data" / "raw" / "data.csv", parse_dates=["Date"])
+    with open(ROOT / "config.yaml", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    raw = pd.read_csv(ROOT / cfg["data"]["raw_source"], parse_dates=["Date"])
     raw = raw.sort_values("Date").reset_index(drop=True)
     logp = np.log(raw["Target_Price"].to_numpy())
     pos = {d: i for i, d in enumerate(raw["Date"])}

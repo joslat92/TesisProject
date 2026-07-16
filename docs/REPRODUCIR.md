@@ -1,74 +1,117 @@
-# Apéndice B — Reproducción de punta a punta
+# Reproduccion de punta a punta
 
-Instrucciones verificadas en limpio el 2026-06-12 (Windows 11, Python 3.11).
+Esta guia separa dos procesos: reconstruir los datos desde proveedores
+identificados y ejecutar el pipeline de modelado sobre el dataset resultante.
 
 ## Requisitos
-- Python 3.11 (el pipeline está congelado contra las versiones de
-  `requirements.txt`; torch 2.9.1 instala la rueda CPU en Windows).
-- Git. ~3 GB de disco (entorno + datos + artefactos).
 
-## Pasos exactos
+- Windows 11 o un entorno equivalente con Python 3.12.
+- Git.
+- Aproximadamente 3 GB de espacio disponible.
+- Para reconstruir GDELT: un proyecto de Google Cloud con BigQuery habilitado,
+  facturacion activa y credenciales de aplicacion. La consulta puede generar
+  costo; el dry-run es obligatorio antes de `--execute`.
+
+## Clon y entornos
 
 ```powershell
-# 1. Clonar la rama corregida
-git clone --branch correcciones-auditoria-final https://github.com/joslat92/TesisProject.git
+git clone --branch reconstruccion-datos-origen https://github.com/joslat92/TesisProject.git
 cd TesisProject
-
-# 2. Entorno congelado
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install --upgrade pip
 .venv\Scripts\python.exe -m pip install -r requirements.txt
-
-# 3a. Verificación rápida de mecánica (~15-25 min, recomendada primero)
-.venv\Scripts\python.exe run_all.py --quick
-
-# 3b. Reproducción COMPLETA (horas; incluye WF 144 entrenamientos y
-#     multi-semilla 120)
-.venv\Scripts\python.exe run_all.py
+.venv\Scripts\python.exe -m pip install -r requirements-data.txt
 ```
 
-`run_all.py` ejecuta la cadena 00→30 y se detiene si cualquier stage falla.
-El **gate** del pipeline (validación de contrato fail-fast + suite anti-fuga +
-verificación del y_true contra la fuente primaria, `tests/`) corre dentro de
-`20_evaluate_stats` — si la corrida termina con `RUN_ALL_OK`, pasó todos los
-gates.
+## Reconstruccion de datos
 
-## Qué produce
-- `outputs/preds/` — predicciones por modelo/horizonte (OOS, WF, MULTISEED, OOS_2025)
-- `reports/data/` — métricas y tests (metrics_OOS, metrics_WF, tbl_DM_OOS,
-  dm_summary, tbl_MZ_core, tbl_PT_OOS, multiseed_*, *_2025)
-- `reports/figs/` — 25 figuras canónicas + boxplot multi-semilla
+`data/raw/data.csv` es el dataset heredado y solo se usa para auditoria
+forense. El pipeline canonico lee `data/curated/model_input_ndx.csv`, que no se
+publica en Git y debe reconstruirse.
 
-## Modo --quick: qué se verifica y qué no
-| Aspecto | --quick | completo |
-|---|---|---|
-| Preparación de datos, RW, ARIMA, ARIMAX/SARIMAX (OOS 2024 y 2025) | ✔ números EXACTOS de la tesis (deterministas) | ✔ |
-| Gates (contrato, anti-fuga, y_true vs fuente primaria) | ✔ completos | ✔ |
-| Variantes LSTM | mecánica ✔, números NO (epochs=2) | ✔ (epochs=30, seed 42) |
-| Walk-forward (14), sus métricas (24) y multi-semilla (15) | omitidos | ✔ |
+```powershell
+# Evidencia y fuentes de mercado sin BigQuery
+.venv\Scripts\python.exe scripts/data/00_snapshot_legacy.py
+.venv\Scripts\python.exe scripts/data/10_fetch_market_data.py
+.venv\Scripts\python.exe scripts/data/20_forensic_legacy_target.py
+.venv\Scripts\python.exe scripts/data/21_forensic_legacy_vix.py
 
-En `--quick` se crea una copia temporal aislada del repositorio. Los configs de
-esa copia se parchean a `epochs=2`; al terminar, la copia completa se elimina.
-Los artefactos canónicos del árbol principal no se leen ni se sobrescriben.
+# GDELT: primero estimar. PROYECTO_GCP debe ser un proyecto propio autorizado.
+gcloud auth application-default login
+gcloud auth application-default set-quota-project PROYECTO_GCP
+.venv\Scripts\python.exe scripts/data/30_fetch_gdelt.py --billing-project PROYECTO_GCP --maximum-gib 1250
 
-## Verificación realizada (2026-06-12, script: scripts/cleanroom_test.ps1)
-- Clon limpio en carpeta temporal + venv desde cero + `pip install -r
-  requirements.txt` (con descarga de torch CPU) + `run_all.py --quick`:
-  **RUN_ALL_OK en 6.1 min**, todos los gates pasados dentro del clon
-  (contrato fail-fast, anti-fuga, y_true contra fuente primaria).
-- Comparación de las métricas de los modelos clásicos (RW/ARIMA/ARIMAX/
-  SARIMAX) del clon contra las del repositorio (RC2.1): **IDÉNTICAS** en
-  `metrics_OOS.csv` y `metrics_OOS_2025.csv` (igualdad exacta de
-  RMSE/MAE/MDA por horizonte) — los clásicos no dependen del flag --quick.
-- Verificado en modo rápido (no repetido en el clon por costo): los números
-  LSTM (epochs=30), el walk-forward (14) y el multi-semilla (15). Esos
-  corresponden a la cadena completa con la que se generó RC2.1 en el
-  repositorio principal (bitácora 2026-06-11/12), ejecutable con
-  `run_all.py` sin flags.
+# Ejecutar solo despues de revisar bytes estimados, tarifa y presupuesto.
+.venv\Scripts\python.exe scripts/data/30_fetch_gdelt.py --billing-project PROYECTO_GCP --maximum-gib 1250 --execute
 
-## Notas de entorno
-- Los resultados LSTM son deterministas dada la semilla en CPU con estas
-  versiones; cambios de versión de torch pueden mover decimales.
-- `data/raw/data.csv` viaja en el repositorio como fuente primaria; el snapshot
-  de reproducibilidad (hash SHA-256 del crudo) queda en
-  `reports/data/metadata_snapshot.csv`.
+# Seleccion, integracion y comparacion
+.venv\Scripts\python.exe scripts/data/35_audit_gdelt_candidates.py
+.venv\Scripts\python.exe scripts/data/40_build_curated.py
+.venv\Scripts\python.exe scripts/data/50_compare_legacy_curated.py
+```
+
+La consulta sellada leyo 1.209,42 GiB y produjo 7.430 filas agregadas. El costo
+real depende de precios y cuotas vigentes. `--maximum-gib 1250` es un limite de
+facturacion de la tarea, no una prediccion del cobro ni permiso para elevarlo.
+
+El resultado validado tiene 2.558 filas entre 2015-02-19 y 2025-04-22:
+
+```text
+SHA-256: abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce
+```
+
+Verificacion en PowerShell:
+
+```powershell
+(Get-FileHash data/curated/model_input_ndx.csv -Algorithm SHA256).Hash.ToLower()
+```
+
+Los manifiestos en `data/manifests/` registran las URLs, la consulta SQL, el job
+de BigQuery, los hashes de entrada y las reglas de calendario. La fecha
+2017-08-29 se excluye por ausencia de tono; no se aplica `ffill` ni imputacion
+neutral.
+
+## Pipeline de modelado
+
+Verificacion rapida aislada:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe run_all.py --quick
+```
+
+Reproduccion completa recomendada:
+
+```powershell
+.venv\Scripts\python.exe run_all.py --fresh
+```
+
+`--fresh` mueve `data/processed`, `outputs`, `reports` y `logs` a una carpeta
+fechada dentro de `_run_archive/`, recrea los directorios vacios y ejecuta todas
+las etapas. No borra los resultados anteriores. No se combina con `--quick`.
+
+La cadena completa incluye preparacion, RW, ARIMA, ARIMAX/SARIMAX, variantes
+LSTM, walk-forward, multi-semilla, robustez 2025, evaluacion, figuras y
+regimenes. Se detiene ante cualquier codigo de salida distinto de cero. El gate
+final valida contrato, ausencia de fuga y `y_true` contra el dataset configurado.
+
+## Salidas
+
+- `outputs/preds/OOS/`: 28 archivos del OOS 2024.
+- `outputs/preds/WF/`: 336 archivos walk-forward.
+- `outputs/preds/MULTISEED/`: 120 archivos LSTM por semilla.
+- `outputs/preds/OOS_2025/`: 28 archivos de robustez.
+- `reports/data/`: metricas, DM-HLN, MZ, PT y resumenes.
+- `reports/figs/`: figuras canonicas y boxplot multi-semilla.
+
+## Validacion efectuada
+
+El 2026-07-16 se ejecuto el pipeline sobre el dataset reconstruido en un
+worktree aislado con Python 3.12.13. Todas las etapas produjeron artefactos y el
+gate consolidado aprobo 15 pruebas. La primera corrida limpia expuso una
+dependencia de orden en el analisis multisemilla; fue corregida y cubierta con
+una prueba de regresion antes de sellar los resultados.
+
+Los resultados reconstruidos no coinciden con RC2.1, porque RC2.1 provenia del
+dataset heredado. `docs/reconstruccion_datos.md` resume las diferencias y su
+interpretacion; el documento Word debe citar solo los artefactos reconstruidos.

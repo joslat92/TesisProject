@@ -92,6 +92,30 @@ en que el dato heredado repite exactamente -1,2462, la serie reconstruida tiene
 resultados obtenidos con el dataset heredado no se transfieren al nuevo: deben
 recalcularse mediante el pipeline completo antes de actualizar la tesis.
 
+## Resultados de la reproduccion reconstruida
+
+La corrida limpia uso el dataset con SHA-256
+`abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce`.
+Completo preparacion, modelos OOS, walk-forward, 120 entrenamientos
+multi-semilla, robustez 2025, evaluacion, figuras y regimenes. El gate final
+aprobo 15 pruebas.
+
+En OOS 2024, LSTM_FULL obtuvo RMSE 0,03983 en h=20 frente a 0,04368 del RW,
+pero el DM-HLN de la semilla canonica no rechazo igualdad predictiva
+(p=0,1811). En diez semillas, la mediana del p-valor fue 0,2225, solo una
+semilla quedo bajo 0,05 y el ensemble obtuvo p=0,2101. Por tanto, el resultado
+no respalda una superioridad estadistica robusta de LSTM_FULL frente al RW.
+
+En walk-forward, LSTM_FULL obtuvo RMSE medio 0,03593 en h=20 frente a 0,04136
+del RW. Este resultado describe estabilidad temporal de error, pero no sustituye
+la inferencia DM del OOS. En robustez enero-abril de 2025, RW tuvo el menor RMSE
+en h=5, 10 y 20; ninguna comparacion DM contra RW rechazo al 5 %.
+
+La primera corrida verdaderamente limpia tambien revelo que el analisis
+multi-semilla dependia de `metrics_OOS.csv`, generado en una etapa posterior.
+La dependencia quedaba oculta por artefactos antiguos. Se corrigio calculando la
+referencia RW desde sus propias predicciones y se agrego una prueba de regresion.
+
 ## Estado y decisiones pendientes
 
 | Componente | Estado | Evidencia o bloqueo |
@@ -103,9 +127,10 @@ recalcularse mediante el pipeline completo antes de actualizar la tesis.
 | VIX oficial | Descargado | Cboe, apertura y cierre diarios |
 | Consulta GDELT | Ejecutada | Job, consulta, bytes y SHA-256 versionados |
 | Scope GDELT | Sellado | `nasdaq_market`, sin usar rendimiento predictivo |
-| Dataset curado | En construccion | Falta ejecutar y validar el constructor final |
-| Nueva corrida del pipeline | Pendiente | Solo procede despues de sellar el dataset curado |
-| Actualizacion de la tesis | Pendiente | Depende de los resultados de la nueva corrida |
+| Dataset curado | Sellado | 2.558 filas y SHA-256 versionado |
+| Nueva corrida del pipeline | Completada | Todas las etapas y gate final ejecutados |
+| Actualizacion de la tesis | Pendiente | Debe reemplazar cifras, tablas, figuras y conclusiones heredadas |
 
-No se actualizaran cifras, conclusiones ni afirmaciones del documento de tesis
-antes de ejecutar y auditar el pipeline completo con el dataset reconstruido.
+No deben reutilizarse cifras, conclusiones ni afirmaciones del documento de
+tesis que procedan del dataset heredado. La actualizacion se realizara solo con
+los artefactos sellados de esta reproduccion.
