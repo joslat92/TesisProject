@@ -125,6 +125,10 @@ Se adopta como nueva base el dataset reconstruido desde NASDAQ-100 oficial
 `nasdaq_market`. Tiene 2.558 filas y SHA-256
 `abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce`.
 La fecha 2017-08-29 se excluye por falta de tono, sin imputacion.
+El alcance `nasdaq_market` se selecciona por cobertura y relevancia documental,
+con el filtro `ECON_STOCKMARKET`; no se utiliza el rendimiento predictivo para
+elegirlo. Se interpreta como proxy de noticias Nasdaq/tecnologia y no como un
+corpus exclusivo de las empresas del indice.
 
 La corrida completa desde arboles vacios termino con `RUN_ALL_OK` en 38,0
 minutos y gate 17/17. Dos ejecuciones independientes dieron 512/512 predicciones
@@ -132,6 +136,9 @@ y 14/14 tablas comparables identicas byte por byte. Los resultados sellados
 muestran para LSTM_FULL vs RW en h=20: RMSE 0,03983 vs 0,04368, pero DM-HLN
 p=0,1811; mediana multi-semilla p=0,2225, 1/10 semillas bajo 0,05 y ensemble
 p=0,2101. En robustez 2025, RW minimiza RMSE en h=5, 10 y 20.
+Ningun contraste contra RW es significativo bajo HLN; la unica celda
+significativa del bloque compara LSTM con SARIMAX en h=20 (p_HLN=0,0496) y se
+trata como un hallazgo aislado.
 
 **Decision:** ninguna cifra ni conclusion de RC2.1 se trasladara al Word. El
 capitulo de resultados, resumen, abstract, conclusiones, tablas y figuras deben

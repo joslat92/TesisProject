@@ -52,13 +52,19 @@ USD 5,98, sujeto a las tarifas y cuotas del proveedor.
 - Walk-forward: LSTM+Sent+VIX obtuvo RMSE medio 0,03593 frente a 0,04136 de RW
   en T+20.
 - Enero-abril de 2025: RW fue mejor en T+5, T+10 y T+20; ningun contraste contra
-  RW fue significativo bajo HLN.
+  RW fue significativo bajo HLN. La unica celda significativa del bloque fue
+  LSTM frente a SARIMAX en T+20 (`p_HLN=0,0496`), no frente a RW, y se conserva
+  como hallazgo aislado.
 
 ## Verificaciones
 
 - Pipeline completo: `RUN_ALL_OK` en 38,0 minutos.
 - Gate consolidado: 17 controles aprobados.
 - Pruebas: 19 aprobadas.
+- Validacion independiente: 14 casos ejecutables en un entorno parcial fueron
+  aprobados; los cinco restantes no se ejecutaron por ausencia de `torch` y
+  `pyarrow`. Esto no contradice la corrida interna de 19 casos en el entorno
+  completo, pero la auditoria externa la clasifica como no verificada por ella.
 - Reproduccion: 512/512 predicciones y 14/14 tablas comparables identicas entre
   dos corridas; jitter grafico corregido y determinista.
 - Manifiesto final: 17 tablas y 28 figuras.
@@ -91,3 +97,6 @@ y de la etiqueta `RC2.1`.
    tarifa, cuota y presupuesto antes de `--execute`.
 5. La reconstruccion crea una nueva base de evidencia. No valida ni debe
    presentarse como continuidad empirica de las cifras historicas.
+6. `reproduction_final.log` no se publica. El manifiesto registra su SHA-256 y
+   distingue la verificacion local basada en ese log de una reproduccion
+   independiente desde un clon.

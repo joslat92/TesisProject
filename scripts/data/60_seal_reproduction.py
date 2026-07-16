@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
+import platform
 import re
 import subprocess
 from pathlib import Path
@@ -20,6 +22,14 @@ ARTIFACT_TREES = (
     "outputs/preds",
     "reports/data",
     "reports/figs",
+)
+ENVIRONMENT_PACKAGES = (
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "scipy",
+    "statsmodels",
+    "torch",
 )
 
 
@@ -57,10 +67,43 @@ def parse_run_log(path: Path | None) -> dict:
     text = path.read_text(encoding="utf-16", errors="replace")
     match = re.search(r"RUN_ALL_OK \(COMPLETO\) en ([0-9.]+) min", text)
     tests = re.findall(r"(\d+) passed in ([0-9.]+)s", text)
+    try:
+        relative = path.resolve().relative_to(ROOT.resolve()).as_posix()
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", relative],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        ).returncode == 0
+    except ValueError:
+        relative = None
+        tracked = False
     return {
         "verified": match is not None,
+        "verification_scope": "parsed_from_local_log",
         "minutes": float(match.group(1)) if match else None,
         "final_gate_passed": int(tests[-1][0]) if tests else None,
+        "source_log": {
+            "path": relative or path.name,
+            "sha256": sha256_file(path),
+            "versioned": tracked,
+        },
+    }
+
+
+def environment_manifest() -> dict:
+    packages = {}
+    for package in ENVIRONMENT_PACKAGES:
+        try:
+            packages[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            packages[package] = None
+    return {
+        "python_implementation": platform.python_implementation(),
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "packages": packages,
     }
 
 
@@ -114,7 +157,7 @@ def main():
         }
 
     payload = {
-        "manifest_version": 1,
+        "manifest_version": 2,
         "created_at_utc": utc_now(),
         "git_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -125,6 +168,7 @@ def main():
             "rows": curated_manifest["rows"],
         },
         "run": parse_run_log(ROOT / args.run_log if args.run_log else None),
+        "environment": environment_manifest(),
         "artifact_trees": {
             relative: tree_manifest(ROOT / relative) for relative in ARTIFACT_TREES
         },
