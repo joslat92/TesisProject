@@ -40,6 +40,7 @@ ROOT = Path(__file__).resolve().parent
 
 STAGES = [
     ("00_prepare.py", "Preparación de datos (parquets por horizonte)", False),
+    ("05_stationarity.py", "Diagnóstico ADF/KPSS para el apéndice", False),
     ("10_baselines.py", "Baseline RW", False),
     ("11_train_arima.py", "ARIMA iterado", False),
     ("13_train_sarimax.py", "ARIMAX/SARIMAX (exógenas congeladas)", False),

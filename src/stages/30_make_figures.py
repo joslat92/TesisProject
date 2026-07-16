@@ -71,20 +71,26 @@ def fig_volcano(df_met, df_dm, h, figs_dir, palette):
                       right_on=['Horizon', 'Challenger'])
     if merged.empty:
         return
-    merged['neglog_p'] = -np.log10(merged['p_value'].clip(lower=1e-6))
+    p_column = 'p_HLN' if 'p_HLN' in merged.columns else 'p_value'
+    merged['neglog_p'] = -np.log10(merged[p_column].clip(lower=1e-6))
+    label_offsets = {
+        'ARIMA': (7, -14), 'ARIMAX': (7, 8), 'SARIMAX': (7, 22),
+        'LSTM': (7, 7), 'LSTM_SENT': (7, -16), 'LSTM_FULL': (7, 9),
+    }
     plt.figure(figsize=(8, 6))
     for _, r in merged.iterrows():
         plt.scatter(r['dRMSE_pct'], r['neglog_p'], s=90,
                     color=palette[r['Model']], zorder=3)
         plt.annotate(r['Model'], (r['dRMSE_pct'], r['neglog_p']),
-                     textcoords="offset points", xytext=(6, 5), fontsize=9)
+                     textcoords="offset points",
+                     xytext=label_offsets.get(r['Model'], (7, 7)), fontsize=9)
     plt.axhline(-np.log10(0.05), color='red', linestyle='--', linewidth=0.9,
                 label='p=0.05')
     plt.axhline(-np.log10(0.10), color='orange', linestyle=':', linewidth=0.9,
                 label='p=0.10')
     plt.axvline(0, color='black', linewidth=1)
     plt.xlabel('dRMSE vs RW (%)  [negativo = mejor]')
-    plt.ylabel('-log10 p (DM vs RW, HAC L=h-1)')
+    plt.ylabel('-log10 p_HLN (DM vs RW, HAC L=h-1)')
     plt.title(f'Volcano DM vs RW — OOS 2024 (h={h})')
     plt.legend()
     plt.tight_layout()

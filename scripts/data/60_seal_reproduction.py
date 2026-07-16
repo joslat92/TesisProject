@@ -81,14 +81,37 @@ def main():
     metrics_wf = pd.read_csv(ROOT / "reports/data/metrics_WF.csv")
     dm = pd.read_csv(ROOT / "reports/data/tbl_DM_OOS.csv")
     multiseed = pd.read_csv(ROOT / "reports/data/multiseed_dm_T20_LSTM_FULL.csv")
+    multiseed_all = pd.read_csv(
+        ROOT / "reports/data/multiseed_dm_T20_all_variants.csv"
+    )
+    stationarity = pd.read_csv(ROOT / "reports/data/stationarity_tests.csv")
     robust = pd.read_csv(ROOT / "reports/data/metrics_OOS_2025.csv")
 
     ms_seeds = multiseed[multiseed["Seed"].astype(str) != "ENSEMBLE"]
     ms_ensemble = scalar(multiseed, Seed="ENSEMBLE")
+    multiseed_by_variant = {}
+    for variant, group in multiseed_all.groupby("Variant"):
+        seeds = group[group["Seed"].astype(str) != "ENSEMBLE"]
+        ensemble = scalar(group, Seed="ENSEMBLE")
+        multiseed_by_variant[variant] = {
+            "median_p_value": float(seeds["p_value"].median()),
+            "seeds_p_below_0_05": int((seeds["p_value"] < 0.05).sum()),
+            "ensemble_p_value": float(ensemble["p_value"]),
+            "ensemble_rmse": float(ensemble["RMSE"]),
+        }
     robust_winners = {
         str(int(h)): group.loc[group["RMSE"].idxmin(), "Model"]
         for h, group in robust.groupby("Horizon")
     }
+    stationarity_summary = {}
+    for transform, group in stationarity.groupby("transform"):
+        stationarity_summary[transform] = {
+            row.test: {
+                "p_value_lag_0": float(row.pvalue),
+                "conclusion_lag_0": row.conclusion,
+            }
+            for row in group[group["lag"] == 0].itertuples()
+        }
 
     payload = {
         "manifest_version": 1,
@@ -130,6 +153,8 @@ def main():
                 "seeds_p_below_0_05": int((ms_seeds["p_value"] < 0.05).sum()),
                 "ensemble_p_value": float(ms_ensemble["p_value"]),
             },
+            "multiseed_h20_by_variant": multiseed_by_variant,
+            "stationarity": stationarity_summary,
             "robustness_2025_rmse_winner_by_horizon": robust_winners,
         },
     }

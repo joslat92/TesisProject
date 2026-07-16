@@ -129,37 +129,49 @@ def run_analysis(cfg, stage_eval):
     print("\n--- RESUMEN MULTI-SEMILLA (RMSE mean +- std) ---")
     print(agg[['Variant', 'Horizon', 'RMSE_mean', 'RMSE_std', 'RMSE_min', 'RMSE_max']].to_string(index=False))
 
-    # --- DM vs RW para LSTM_FULL T=20: por semilla + ensemble ---
+    # --- DM vs RW para cada variante T=20: por semilla + ensemble ---
     rw_path = os.path.join(ROOT, cfg['paths']['preds_oos_dir'],
                            cfg['contract']['naming']['oos'].format(h=20, model='RW'))
     df_rw = pd.read_csv(rw_path, parse_dates=['Date'])
-    dm_rows = []
-    ens = None
-    for seed in SEEDS:
-        dfp = pd.read_csv(os.path.join(out_dir, f"preds_T20_LSTM_FULL_seed{seed}.csv"),
-                          parse_dates=['Date'])
-        common = pd.merge(dfp, df_rw[['Date', 'y_pred_ret']],
-                          on='Date', suffixes=('', '_rw'))
+    all_dm_rows = []
+    for variant in ['LSTM', 'LSTM_SENT', 'LSTM_FULL']:
+        ens = None
+        for seed in SEEDS:
+            dfp = pd.read_csv(
+                os.path.join(out_dir, f"preds_T20_{variant}_seed{seed}.csv"),
+                parse_dates=['Date'])
+            common = pd.merge(dfp, df_rw[['Date', 'y_pred_ret']],
+                              on='Date', suffixes=('', '_rw'))
+            dm_stat, p_val = stage_eval.diebold_mariano_test(
+                common['y_true_ret'].values, common['y_pred_ret_rw'].values,
+                common['y_pred_ret'].values, h=20)
+            err = common['y_true_ret'] - common['y_pred_ret']
+            all_dm_rows.append({
+                'Variant': variant, 'Seed': str(seed),
+                'RMSE': round(np.sqrt((err**2).mean()), 5),
+                'DM_Stat': round(dm_stat, 4), 'p_value': round(p_val, 4),
+            })
+            ens = common[['Date', 'y_true_ret']].copy() if ens is None else ens
+            ens[f'pred_{seed}'] = common['y_pred_ret'].values
+
+        pred_cols = [c for c in ens.columns if c.startswith('pred_')]
+        ens['y_pred_ens'] = ens[pred_cols].mean(axis=1)
+        common = pd.merge(ens, df_rw[['Date', 'y_pred_ret']], on='Date')
         dm_stat, p_val = stage_eval.diebold_mariano_test(
-            common['y_true_ret'].values, common['y_pred_ret_rw'].values,
-            common['y_pred_ret'].values, h=20)
-        err = common['y_true_ret'] - common['y_pred_ret']
-        dm_rows.append({'Seed': str(seed), 'RMSE': round(np.sqrt((err**2).mean()), 5),
-                        'DM_Stat': round(dm_stat, 4), 'p_value': round(p_val, 4)})
-        ens = common[['Date', 'y_true_ret']].copy() if ens is None else ens
-        ens[f'pred_{seed}'] = common['y_pred_ret'].values
+            common['y_true_ret'].values, common['y_pred_ret'].values,
+            common['y_pred_ens'].values, h=20)
+        err = common['y_true_ret'] - common['y_pred_ens']
+        all_dm_rows.append({
+            'Variant': variant, 'Seed': 'ENSEMBLE',
+            'RMSE': round(np.sqrt((err**2).mean()), 5),
+            'DM_Stat': round(dm_stat, 4), 'p_value': round(p_val, 4),
+        })
 
-    pred_cols = [c for c in ens.columns if c.startswith('pred_')]
-    ens['y_pred_ens'] = ens[pred_cols].mean(axis=1)
-    common = pd.merge(ens, df_rw[['Date', 'y_pred_ret']], on='Date')
-    dm_stat, p_val = stage_eval.diebold_mariano_test(
-        common['y_true_ret'].values, common['y_pred_ret'].values,
-        common['y_pred_ens'].values, h=20)
-    err = common['y_true_ret'] - common['y_pred_ens']
-    dm_rows.append({'Seed': 'ENSEMBLE', 'RMSE': round(np.sqrt((err**2).mean()), 5),
-                    'DM_Stat': round(dm_stat, 4), 'p_value': round(p_val, 4)})
-
-    df_dm = pd.DataFrame(dm_rows)
+    df_dm_all = pd.DataFrame(all_dm_rows)
+    df_dm_all.to_csv(os.path.join(ROOT, "reports", "data",
+                                  "multiseed_dm_T20_all_variants.csv"), index=False)
+    df_dm = df_dm_all[df_dm_all['Variant'] == 'LSTM_FULL'].drop(
+        columns='Variant').reset_index(drop=True)
     df_dm.to_csv(os.path.join(ROOT, "reports", "data",
                               "multiseed_dm_T20_LSTM_FULL.csv"), index=False)
     print("\n--- DM vs RW (LSTM_FULL, T=20) ---")
