@@ -9,15 +9,20 @@ from statsmodels.tools.sm_exceptions import InterpolationWarning
 from statsmodels.tsa.stattools import adfuller, kpss
 
 
-def stationarity_table(series: pd.Series, series_name: str) -> pd.DataFrame:
-    """Run the thesis' fixed-lag ADF/KPSS specification on level and diff1."""
+def stationarity_table(
+    series: pd.Series,
+    series_name: str,
+    level_label: str = "level",
+    difference_label: str = "diff1",
+) -> pd.DataFrame:
+    """Run the fixed-lag ADF/KPSS specification on a level and its difference."""
     level = pd.to_numeric(series, errors="raise").dropna()
     if len(level) < 10:
         raise ValueError("Stationarity diagnostics require at least 10 observations.")
 
     transforms = {
-        "level": level,
-        "diff1": level.diff().dropna(),
+        level_label: level,
+        difference_label: level.diff().dropna(),
     }
     rows: list[dict[str, object]] = []
 

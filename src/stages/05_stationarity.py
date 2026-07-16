@@ -9,6 +9,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import yaml
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
@@ -30,17 +31,23 @@ def main() -> None:
     if target not in data.columns:
         raise ValueError(f"Missing configured target column: {target}")
 
-    result = stationarity_table(data[target], target)
+    log_level = np.log(pd.to_numeric(data[target], errors="raise"))
+    result = stationarity_table(
+        log_level,
+        "log_Target_Price",
+        level_label="log_level",
+        difference_label="ret_1d",
+    )
     output = ROOT / "reports" / "data" / "stationarity_tests.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
     result.to_csv(output, index=False)
 
     figures = ROOT / "reports" / "figs"
     figures.mkdir(parents=True, exist_ok=True)
-    level = pd.to_numeric(data[target], errors="raise").dropna()
+    level = log_level.dropna()
     for name, plotter, title in (
-        ("Fig_appendix_acf_level.png", plot_acf, "ACF - Precio NASDAQ-100 (nivel)"),
-        ("Fig_appendix_pacf_level.png", plot_pacf, "PACF - Precio NASDAQ-100 (nivel)"),
+        ("Fig_appendix_acf_level.png", plot_acf, "ACF - log(NASDAQ-100)"),
+        ("Fig_appendix_pacf_level.png", plot_pacf, "PACF - log(NASDAQ-100)"),
     ):
         fig, ax = plt.subplots(figsize=(8, 6))
         plotter(level, lags=40, ax=ax)

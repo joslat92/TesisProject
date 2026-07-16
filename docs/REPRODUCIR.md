@@ -15,7 +15,7 @@ identificados y ejecutar el pipeline de modelado sobre el dataset resultante.
 ## Clon y entornos
 
 ```powershell
-git clone --branch reconstruccion-datos-origen https://github.com/joslat92/TesisProject.git
+git clone --branch entrega-final-tutor https://github.com/joslat92/TesisProject.git
 cd TesisProject
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install --upgrade pip
@@ -104,8 +104,8 @@ de salida distinto de cero. El gate final valida contrato, ausencia de fuga y
 - `outputs/preds/OOS_2025/`: 28 archivos de robustez.
 - `reports/data/`: metricas, DM-HLN, MZ, PT, ADF/KPSS y resumenes.
 - `reports/figs/`: 28 figuras selladas, incluidos boxplot y correlogramas.
-- `Tesis Maestro Final - Datos Reconstruidos.docx`: tesis actualizada; el maestro
-  sin sufijo se conserva intacto como antecedente.
+- `Tesis_Maestro_Final.docx`: tesis final actualizada con los resultados del
+  dataset reconstruido.
 
 ## Validacion efectuada
 
@@ -128,7 +128,7 @@ hashes finales de 17 tablas y 28 figuras.
 Los resultados reconstruidos no coinciden con RC2.1, porque RC2.1 provenia del
 dataset heredado. `docs/reconstruccion_datos.md` resume las diferencias y su
 interpretacion. La version Word vigente es
-`Tesis Maestro Final - Datos Reconstruidos.docx`.
+`Tesis_Maestro_Final.docx`.
 
 El extracto verificable de la ejecucion sellada se conserva en
 `logs/reproduction_final_summary_2026-07-16.log`. Incluye el SHA-256 del log

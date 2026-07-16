@@ -1,13 +1,13 @@
 # Reporte de actualizacion de la tesis con datos reconstruidos
 
 Fecha de cierre: 2026-07-16  
-Rama: `reconstruccion-datos-origen`
+Rama: `entrega-final-tutor`
 
 ## Entregables
 
-- Maestro historico preservado: `Tesis Maestro Final.docx`.
-- Version vigente: `Tesis Maestro Final - Datos Reconstruidos.docx`.
-- Generador reproducible: `scripts/update_tesis_reconstructed.py`.
+- Version vigente: `Tesis_Maestro_Final.docx`.
+- El maestro historico y los generadores de integracion permanecen en
+  `reconstruccion-datos-origen`, no en la rama de entrega.
 - Manifiesto de resultados: `data/manifests/reproduction_results.json`.
 
 ## Procedencia y reconstruccion
@@ -31,7 +31,9 @@ USD 5,98, sujeto a las tarifas y cuotas del proveedor.
   que dependian de resultados heredados.
 - La metodologia ahora documenta fuentes, calendario, transformaciones,
   causalidad de exogenas, contrato anti-fuga, hash y limitaciones de procedencia.
-- Se incorporaron ADF/KPSS y correlogramas del objetivo oficial.
+- Se incorporaron ADF/KPSS sobre `log(P)` y `ret_1d = Δlog(P)`, junto con
+  correlogramas de `log(P)`. El diagnostico se presenta como descriptivo y no
+  como selector dinamico del modelo.
 - Se actualizaron DM-HLN, Mincer-Zarnowitz, Pesaran-Timmermann, walk-forward,
   multi-semilla, robustez 2025 y la discusion por regimen.
 - Se agregaron las referencias [30]-[32] para FRED/Nasdaq, Cboe y GDELT.
@@ -68,7 +70,7 @@ USD 5,98, sujeto a las tarifas y cuotas del proveedor.
 - Reproduccion: 512/512 predicciones y 14/14 tablas comparables identicas entre
   dos corridas; jitter grafico corregido y determinista.
 - Manifiesto final: 17 tablas y 28 figuras.
-- Word: 53 paginas inspeccionadas visualmente, 13 tablas, 10 figuras, 20 objetos
+- Word: 56 paginas inspeccionadas visualmente, 13 tablas, 10 figuras, 20 objetos
   OMML de ecuacion, 32 referencias, sin comentarios ni cambios controlados.
 - Terminos vetados en el maestro de partida y en la version final:
 

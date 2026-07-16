@@ -139,7 +139,7 @@ dataset, artefactos y resultados clave.
 | Scope GDELT | Sellado | `nasdaq_market`, sin usar rendimiento predictivo |
 | Dataset curado | Sellado | 2.558 filas y SHA-256 versionado |
 | Nueva corrida del pipeline | Completada | Todas las etapas y gate final ejecutados |
-| Actualizacion de la tesis | Completada | `Tesis Maestro Final - Datos Reconstruidos.docx`, 53 paginas verificadas |
+| Actualizacion de la tesis | Completada | `Tesis_Maestro_Final.docx`, 56 paginas verificadas |
 
 No deben reutilizarse cifras, conclusiones ni afirmaciones de versiones de la
 tesis que procedan del dataset heredado. La version reconstruida usa solo los
