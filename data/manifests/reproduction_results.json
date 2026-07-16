@@ -21,13 +21,26 @@
       "tree_sha256": "798fff63f06943fa32fa69f04043b901cb51863b94416672a26ddb8e764b3ece"
     }
   },
-  "created_at_utc": "2026-07-16T19:23:32+00:00",
+  "created_at_utc": "2026-07-16T20:35:26+00:00",
   "dataset": {
     "path": "data/curated/model_input_ndx.csv",
     "rows": 2558,
     "sha256": "abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce"
   },
-  "git_commit": "19b4c24d8be691bc907f34120519f74634540401",
+  "environment": {
+    "packages": {
+      "numpy": "2.3.3",
+      "pandas": "2.3.3",
+      "pyarrow": "22.0.0",
+      "scipy": "1.16.3",
+      "statsmodels": "0.14.6",
+      "torch": "2.9.1"
+    },
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python_implementation": "CPython",
+    "python_version": "3.12.13"
+  },
+  "git_commit": "077943eb217e55f6eed816ada6b336cf6cee9540",
   "key_results": {
     "multiseed_h20": {
       "ensemble_p_value": 0.2101,
@@ -92,7 +105,7 @@
       "RW": 0.04136
     }
   },
-  "manifest_version": 1,
+  "manifest_version": 2,
   "report_hashes": {
     "dm_summary.csv": "bd0a9fa7c38bcb72bf4142b4d7f5bec9d9130657e3b1753e01eabedb75d7fa63",
     "metadata_snapshot.csv": "305ad36c52c97f9347e863dcdbcae63a08eaa1951dd4073cea58f580ee04a4b4",
@@ -115,6 +128,12 @@
   "run": {
     "final_gate_passed": 17,
     "minutes": 38.0,
+    "source_log": {
+      "path": "reproduction_final.log",
+      "sha256": "46bcdbd21dc4bc77d9ba1dbcfe648cdbf8610927b0fc85f1f49d6036534a5faf",
+      "versioned": false
+    },
+    "verification_scope": "parsed_from_local_log",
     "verified": true
   }
 }
