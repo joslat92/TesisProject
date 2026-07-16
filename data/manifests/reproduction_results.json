@@ -11,17 +11,17 @@
       "tree_sha256": "cf4149da47cb37a8adbf59740feb45483f708c7f079a56a7508a218b82244c68"
     },
     "reports/data": {
-      "bytes": 38853,
+      "bytes": 38929,
       "files": 17,
-      "tree_sha256": "aa0b1d4f597d1d80667506e74b39464d62bdc710c66e88ae7ee1f35499176264"
+      "tree_sha256": "5bbd6eb86cb0fedc13358ff26a548122d393c7eba7080a97b9cd00f3ef9add64"
     },
     "reports/figs": {
-      "bytes": 7572200,
+      "bytes": 7568953,
       "files": 28,
-      "tree_sha256": "798fff63f06943fa32fa69f04043b901cb51863b94416672a26ddb8e764b3ece"
+      "tree_sha256": "4cc6892eb4f947e0b334644b209e9d30494f495fd5204e6cc2194ad12b7b3e0e"
     }
   },
-  "created_at_utc": "2026-07-16T20:50:31+00:00",
+  "created_at_utc": "2026-07-16T23:17:01+00:00",
   "dataset": {
     "path": "data/curated/model_input_ndx.csv",
     "rows": 2558,
@@ -40,7 +40,7 @@
     "python_implementation": "CPython",
     "python_version": "3.12.13"
   },
-  "git_commit": "2393f46715d5e3433773c4864a44352b191912c8",
+  "git_commit": "c4cfb8529dbde76528eb6524f8ffd7e666cdd778",
   "key_results": {
     "multiseed_h20": {
       "ensemble_p_value": 0.2101,
@@ -79,7 +79,17 @@
       "5": "RW"
     },
     "stationarity": {
-      "diff1": {
+      "log_level": {
+        "ADF": {
+          "conclusion_lag_0": "Fail_to_reject_unit_root",
+          "p_value_lag_0": 0.815908164183563
+        },
+        "KPSS": {
+          "conclusion_lag_0": "Reject_stationarity",
+          "p_value_lag_0": 0.01
+        }
+      },
+      "ret_1d": {
         "ADF": {
           "conclusion_lag_0": "Reject_unit_root",
           "p_value_lag_0": 0.0
@@ -87,16 +97,6 @@
         "KPSS": {
           "conclusion_lag_0": "Do_not_reject_stationarity",
           "p_value_lag_0": 0.1
-        }
-      },
-      "level": {
-        "ADF": {
-          "conclusion_lag_0": "Fail_to_reject_unit_root",
-          "p_value_lag_0": 0.8852605788914272
-        },
-        "KPSS": {
-          "conclusion_lag_0": "Reject_stationarity",
-          "p_value_lag_0": 0.01
         }
       }
     },
@@ -119,7 +119,7 @@
     "multiseed_metrics_by_seed.csv": "f29bc35674ac4012b6b0968d6728e71c3e3ab3e99a171ad5df7be0f8892806ec",
     "multiseed_summary.csv": "996dc77e8d0d09af6e4c63f54eefa2d555b01898ac4c4b6d12a7c114ad8baca3",
     "regimes_summary.csv": "df496bcc1d653665505234450de04fb886c66aa0bbd927780c7b33b9195e0981",
-    "stationarity_tests.csv": "dafd126b71b2cbaa75e97cfc101c6e71e78e6a0147e0baf057a2bbd9b0241afc",
+    "stationarity_tests.csv": "a17d701344d074a14e20a7bee1ce9ef09c30af409e574586016db3857c2e8f4e",
     "tbl_DM_2025.csv": "04a7dedd4d0bee624c3aa502b1c978fbffa5e61b4e6ec05a5532e5e9616db566",
     "tbl_DM_OOS.csv": "88003b82b8616c8007b6e2f78b745d13e93f22f1241e9b424bba5214949ec8d5",
     "tbl_MZ_core.csv": "f4182e35bd1bc1f93fc197c1e0a194aea0dd9ba40735c9692ce7f74614311118",
@@ -137,7 +137,7 @@
     "verified": true,
     "versioned_summary": {
       "path": "logs/reproduction_final_summary_2026-07-16.log",
-      "sha256": "305097dc62b2536ee7bfaecf3d75c82e6573a994de4a3b8c2ca888d96562cc5d",
+      "sha256": "39dc914799264cb0bd7aecc15a435d054f350731ed2cc04aab032af310bcdabf",
       "versioned": true
     }
   }
