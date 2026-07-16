@@ -21,7 +21,7 @@
       "tree_sha256": "798fff63f06943fa32fa69f04043b901cb51863b94416672a26ddb8e764b3ece"
     }
   },
-  "created_at_utc": "2026-07-16T20:35:26+00:00",
+  "created_at_utc": "2026-07-16T20:50:31+00:00",
   "dataset": {
     "path": "data/curated/model_input_ndx.csv",
     "rows": 2558,
@@ -40,7 +40,7 @@
     "python_implementation": "CPython",
     "python_version": "3.12.13"
   },
-  "git_commit": "077943eb217e55f6eed816ada6b336cf6cee9540",
+  "git_commit": "2393f46715d5e3433773c4864a44352b191912c8",
   "key_results": {
     "multiseed_h20": {
       "ensemble_p_value": 0.2101,
@@ -134,6 +134,11 @@
       "versioned": false
     },
     "verification_scope": "parsed_from_local_log",
-    "verified": true
+    "verified": true,
+    "versioned_summary": {
+      "path": "logs/reproduction_final_summary_2026-07-16.log",
+      "sha256": "305097dc62b2536ee7bfaecf3d75c82e6573a994de4a3b8c2ca888d96562cc5d",
+      "versioned": true
+    }
   }
 }
