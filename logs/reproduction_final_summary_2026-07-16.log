@@ -1,0 +1,28 @@
+# Resumen verificable de la reproduccion final
+
+Fecha de la corrida sellada: 2026-07-16
+Comando de reproduccion: python run_all.py --fresh
+Entorno: CPython 3.12.13, Windows 11
+Log fuente local: reproduction_final.log
+SHA-256 del log fuente: 46bcdbd21dc4bc77d9ba1dbcfe648cdbf8610927b0fc85f1f49d6036534a5faf
+Log fuente versionado: no
+
+Lineas normalizadas del log fuente:
+
+[1185] --- GATE ANTI-FUGA + CORDURA (tests/) ---
+[1187] 17 passed in 37.78s
+[1188] --- GATE ANTI-FUGA: OK ---
+[1321] === RUN_ALL_OK (COMPLETO) en 38.0 min ===
+
+Validacion posterior del entorno completo:
+
+Comando: python -m pip check
+Resultado: No broken requirements found.
+
+Comando: python -m pytest tests/ -q
+Resultado: 19 passed in 29.28s
+
+Las 17 pruebas corresponden al gate ejecutado dentro de la corrida completa.
+Los 19 casos corresponden a la suite completa vigente, incluida la
+parametrizacion de pruebas. Este resumen no sustituye el log local completo;
+permite verificar sus conteos y comprobar su integridad mediante el SHA-256.

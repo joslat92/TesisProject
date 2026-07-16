@@ -61,12 +61,7 @@ def scalar(df: pd.DataFrame, **filters):
     return selected.iloc[0]
 
 
-def parse_run_log(path: Path | None) -> dict:
-    if path is None:
-        return {"verified": False, "reason": "run log not provided"}
-    text = path.read_text(encoding="utf-16", errors="replace")
-    match = re.search(r"RUN_ALL_OK \(COMPLETO\) en ([0-9.]+) min", text)
-    tests = re.findall(r"(\d+) passed in ([0-9.]+)s", text)
+def file_evidence(path: Path) -> dict:
     try:
         relative = path.resolve().relative_to(ROOT.resolve()).as_posix()
         tracked = subprocess.run(
@@ -80,16 +75,28 @@ def parse_run_log(path: Path | None) -> dict:
         relative = None
         tracked = False
     return {
+        "path": relative or path.name,
+        "sha256": sha256_file(path),
+        "versioned": tracked,
+    }
+
+
+def parse_run_log(path: Path | None, summary_path: Path | None = None) -> dict:
+    if path is None:
+        return {"verified": False, "reason": "run log not provided"}
+    text = path.read_text(encoding="utf-16", errors="replace")
+    match = re.search(r"RUN_ALL_OK \(COMPLETO\) en ([0-9.]+) min", text)
+    tests = re.findall(r"(\d+) passed in ([0-9.]+)s", text)
+    result = {
         "verified": match is not None,
         "verification_scope": "parsed_from_local_log",
         "minutes": float(match.group(1)) if match else None,
         "final_gate_passed": int(tests[-1][0]) if tests else None,
-        "source_log": {
-            "path": relative or path.name,
-            "sha256": sha256_file(path),
-            "versioned": tracked,
-        },
+        "source_log": file_evidence(path),
     }
+    if summary_path is not None:
+        result["versioned_summary"] = file_evidence(summary_path)
+    return result
 
 
 def environment_manifest() -> dict:
@@ -110,6 +117,7 @@ def environment_manifest() -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-log", type=Path)
+    parser.add_argument("--run-summary", type=Path)
     args = parser.parse_args()
 
     curated_manifest = json.loads(
@@ -167,7 +175,10 @@ def main():
             "sha256": dataset_hash,
             "rows": curated_manifest["rows"],
         },
-        "run": parse_run_log(ROOT / args.run_log if args.run_log else None),
+        "run": parse_run_log(
+            ROOT / args.run_log if args.run_log else None,
+            ROOT / args.run_summary if args.run_summary else None,
+        ),
         "environment": environment_manifest(),
         "artifact_trees": {
             relative: tree_manifest(ROOT / relative) for relative in ARTIFACT_TREES

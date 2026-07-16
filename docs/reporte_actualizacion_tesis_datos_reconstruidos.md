@@ -97,6 +97,7 @@ y de la etiqueta `RC2.1`.
    tarifa, cuota y presupuesto antes de `--execute`.
 5. La reconstruccion crea una nueva base de evidencia. No valida ni debe
    presentarse como continuidad empirica de las cifras historicas.
-6. `reproduction_final.log` no se publica. El manifiesto registra su SHA-256 y
+6. `reproduction_final.log` no se publica. El manifiesto registra su SHA-256,
    distingue la verificacion local basada en ese log de una reproduccion
-   independiente desde un clon.
+   independiente desde un clon y enlaza el resumen versionado
+   `logs/reproduction_final_summary_2026-07-16.log`.

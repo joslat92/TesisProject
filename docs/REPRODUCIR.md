@@ -129,3 +129,8 @@ Los resultados reconstruidos no coinciden con RC2.1, porque RC2.1 provenia del
 dataset heredado. `docs/reconstruccion_datos.md` resume las diferencias y su
 interpretacion. La version Word vigente es
 `Tesis Maestro Final - Datos Reconstruidos.docx`.
+
+El extracto verificable de la ejecucion sellada se conserva en
+`logs/reproduction_final_summary_2026-07-16.log`. Incluye el SHA-256 del log
+local completo, el gate de 17 casos de `run_all.py --fresh`, el cierre
+`RUN_ALL_OK` y la ejecucion posterior de la suite completa con 19 casos.
