@@ -63,6 +63,16 @@ QUICK_OUTPUT_DIRS = (
     "logs",
 )
 FRESH_DIRS = ("data/processed", "outputs", "reports")
+FRESH_REQUIRED_DIRS = (
+    "data/processed",
+    "outputs/preds/OOS",
+    "outputs/preds/WF",
+    "outputs/preds/MULTISEED",
+    "outputs/preds/OOS_2025",
+    "outputs/preds/WF_2025",
+    "reports/data",
+    "reports/figs",
+)
 
 
 def configured_data_source(root=ROOT):
@@ -86,7 +96,8 @@ def archive_generated_artifacts(root=ROOT, timestamp=None):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(source), str(destination))
             moved.append(relative)
-        source.mkdir(parents=True, exist_ok=True)
+    for relative in FRESH_REQUIRED_DIRS:
+        (root / relative).mkdir(parents=True, exist_ok=True)
     print(f">>> [fresh] artefactos previos archivados en {archive}")
     return archive, moved
 

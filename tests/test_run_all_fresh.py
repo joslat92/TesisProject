@@ -14,5 +14,6 @@ def test_archive_generated_artifacts_preserves_and_recreates_trees(tmp_path):
     assert moved == list(run_all.FRESH_DIRS)
     for relative in run_all.FRESH_DIRS:
         assert (tmp_path / relative).is_dir()
-        assert not any((tmp_path / relative).iterdir())
         assert (archive / relative / "sentinel.txt").read_text(encoding="utf-8") == relative
+    for relative in run_all.FRESH_REQUIRED_DIRS:
+        assert (tmp_path / relative).is_dir()
