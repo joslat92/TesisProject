@@ -86,7 +86,7 @@ Reproduccion completa recomendada:
 .venv\Scripts\python.exe run_all.py --fresh
 ```
 
-`--fresh` mueve `data/processed`, `outputs`, `reports` y `logs` a una carpeta
+`--fresh` mueve `data/processed`, `outputs` y `reports` a una carpeta
 fechada dentro de `_run_archive/`, recrea los directorios vacios y ejecuta todas
 las etapas. No borra los resultados anteriores. No se combina con `--quick`.
 

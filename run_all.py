@@ -62,7 +62,7 @@ QUICK_OUTPUT_DIRS = (
     "reports/figs",
     "logs",
 )
-FRESH_DIRS = ("data/processed", "outputs", "reports", "logs")
+FRESH_DIRS = ("data/processed", "outputs", "reports")
 
 
 def configured_data_source(root=ROOT):
