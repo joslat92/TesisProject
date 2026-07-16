@@ -9,3 +9,6 @@ __pycache__/
 *.bak
 *.runall.bak
 *.zip
+.env
+credentials*.json
+data/source/

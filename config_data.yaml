@@ -1,0 +1,34 @@
+version: 1
+
+period:
+  start: "2015-02-19"
+  end: "2025-04-22"
+
+target:
+  instrument: "NASDAQ-100 Index"
+  provider: "FRED"
+  upstream_source: "Nasdaq, Inc."
+  series: "NASDAQ100"
+  field: "daily close"
+  output_column: "Target_Price"
+  sensitivity_instrument: "Invesco QQQ ETF adjusted close"
+
+vix:
+  provider: "Cboe Global Markets"
+  series: "VIX Index"
+  field: "daily close"
+  output_column: "VIX_Close"
+
+calendar:
+  eligible_market_dates: "intersection of observed NASDAQ-100 and VIX dates"
+  gdelt_mapping: "calendar day maps to the first eligible market date on or after it"
+  missing_value_policy: "fail; no implicit forward fill or neutral-value imputation"
+
+gdelt:
+  provider: "The GDELT Project via Google BigQuery"
+  table: "gdelt-bq.gdeltv2.gkg_partitioned"
+  tone_field: "first component of V2Tone"
+  aggregation: "article-count-weighted mean across calendar days mapped to each market date"
+  selected_scope: null
+  allowed_scopes: [strict_ndx, broad_nasdaq]
+  selection_rule: "coverage and documented relevance only; never predictive performance"

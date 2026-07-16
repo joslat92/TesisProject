@@ -1,0 +1,6 @@
+numpy==2.3.3
+pandas==2.3.3
+PyYAML==6.0.3
+pyarrow==22.0.0
+google-cloud-bigquery==3.42.2
+db-dtypes==1.7.0

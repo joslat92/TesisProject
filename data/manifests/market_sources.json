@@ -1,0 +1,49 @@
+{
+  "created_at_utc": "2026-07-16T00:28:50+00:00",
+  "manifest_version": 1,
+  "redistribution_note": "Source files are excluded from Git pending a licensing review; the URLs, retrieval metadata and checksums are versioned.",
+  "requested_range": {
+    "end": "2025-04-22",
+    "start": "2015-02-17"
+  },
+  "sources": {
+    "nasdaq100": {
+      "date_end": "2025-04-22",
+      "date_start": "2015-02-17",
+      "download": {
+        "bytes": 53611,
+        "content_type": "application/csv",
+        "retrieved_at_utc": "2026-07-16T00:28:49+00:00",
+        "sha256": "58136c47d8be6f862d02b0216966049ea491036330c7008108805cc6aab952c7",
+        "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQ100&cosd=2015-02-17&coed=2025-04-22"
+      },
+      "fields": [
+        "daily open",
+        "daily close"
+      ],
+      "normalized_file": "data/source/nasdaq100_fred.csv",
+      "normalized_sha256": "00885456b3b619724658562f9e199f8e6d302d1b6df0cedacdda4350b254b221",
+      "provider": "FRED, Federal Reserve Bank of St. Louis",
+      "rows": 2562,
+      "series": "NASDAQ100",
+      "upstream_source": "Nasdaq, Inc."
+    },
+    "vix": {
+      "date_end": "2025-04-22",
+      "date_start": "2015-02-17",
+      "download": {
+        "bytes": 470371,
+        "content_type": "text/csv",
+        "retrieved_at_utc": "2026-07-16T00:28:50+00:00",
+        "sha256": "0b2ed656686791c38d4230a2cedeb169a4b56014323079c740722ab5b3bebda9",
+        "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
+      },
+      "field": "daily close",
+      "normalized_file": "data/source/vix_cboe.csv",
+      "normalized_sha256": "907010dcc628a1ed1c86c3c6df470c4a8e618558435a93f92ab1b93b6e486bd2",
+      "provider": "Cboe Global Markets",
+      "rows": 2583,
+      "series": "VIX Index"
+    }
+  }
+}

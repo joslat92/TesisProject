@@ -1,0 +1,62 @@
+{
+  "classification": "integrated_derived_dataset_with_unknown_acquisition",
+  "columns": [
+    "Date",
+    "Target_Price",
+    "Sentiment_GDELT",
+    "VIX_Close",
+    "logP",
+    "ret_log"
+  ],
+  "created_at_utc": "2026-07-16T00:19:51+00:00",
+  "date_end": "2025-04-22",
+  "date_start": "2015-02-17",
+  "duplicate_dates": 0,
+  "known_limitations": [
+    "No acquisition scripts or source query are present in the active repository.",
+    "The file already contains merged sources and derived log/return columns.",
+    "Target_Price identity is not documented in the active repository.",
+    "Sentiment_GDELT is constant over the trailing period reported above."
+  ],
+  "manifest_version": 1,
+  "null_counts": {
+    "Date": 0,
+    "Sentiment_GDELT": 0,
+    "Target_Price": 0,
+    "VIX_Close": 0,
+    "logP": 0,
+    "ret_log": 1
+  },
+  "numeric_profile": {
+    "Sentiment_GDELT": {
+      "max": 6.1291,
+      "mean": -0.8204098789535338,
+      "min": -7.3944,
+      "nulls": 0,
+      "unique": 2404
+    },
+    "Target_Price": {
+      "max": 538.7167,
+      "mean": 246.8711203045685,
+      "min": 89.9071,
+      "nulls": 0,
+      "unique": 2524
+    },
+    "VIX_Close": {
+      "max": 82.69,
+      "mean": 18.531983600156188,
+      "min": 9.01,
+      "nulls": 0,
+      "unique": 1414
+    }
+  },
+  "rows": 2561,
+  "sentiment_constant_tail": {
+    "end": "2025-04-22",
+    "rows": 75,
+    "start": "2025-01-02",
+    "value": -1.2462
+  },
+  "sha256": "a298deefffd0e8c87deee046bcbf556aecc9a8b21eb8c580f7f5cda45197815c",
+  "source_file": "data/raw/data.csv"
+}
