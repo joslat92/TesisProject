@@ -55,6 +55,21 @@ def load_config():
     with open(os.path.join(ROOT, "config.yaml"), "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
+def rw_rmse_from_predictions(cfg, horizons, root=ROOT):
+    """Compute the RW reference without depending on the later evaluation stage."""
+    preds_dir = os.path.join(root, cfg['paths']['preds_oos_dir'])
+    rmse = {}
+    for h in horizons:
+        filename = cfg['contract']['naming']['oos'].format(h=h, model='RW')
+        path = os.path.join(preds_dir, filename)
+        df = pd.read_csv(path)
+        missing = {'y_true_ret', 'y_pred_ret'} - set(df.columns)
+        if missing:
+            raise ValueError(f"{filename} no contiene columnas requeridas: {sorted(missing)}")
+        error = df['y_true_ret'] - df['y_pred_ret']
+        rmse[h] = float(np.sqrt((error ** 2).mean()))
+    return pd.Series(rmse, name='RMSE')
+
 def run_trainings(cfg, stage_lstm):
     """120 entrenamientos; persiste preds por semilla y métricas por semilla."""
     horizons = cfg['features']['horizons']
@@ -155,8 +170,7 @@ def run_analysis(cfg, stage_eval):
 
     # --- Figura: boxplot RMSE por variante x horizonte, con línea RW ---
     horizons = cfg['features']['horizons']
-    df_met = pd.read_csv(os.path.join(ROOT, cfg['paths']['metrics_oos']))
-    rw_rmse = df_met[df_met['Model'] == 'RW'].set_index('Horizon')['RMSE']
+    rw_rmse = rw_rmse_from_predictions(cfg, horizons)
 
     sns.set_theme(style="whitegrid")
     fig, axes = plt.subplots(1, 4, figsize=(16, 4.5), sharey=False)
