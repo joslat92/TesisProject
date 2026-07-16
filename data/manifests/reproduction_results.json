@@ -16,18 +16,18 @@
       "tree_sha256": "aa0b1d4f597d1d80667506e74b39464d62bdc710c66e88ae7ee1f35499176264"
     },
     "reports/figs": {
-      "bytes": 7494320,
-      "files": 26,
-      "tree_sha256": "9691adceb2336b518da00d286675676c8ae974807604b9f31bd61382a1af118f"
+      "bytes": 7568087,
+      "files": 28,
+      "tree_sha256": "b4d78f20fe68272061c60a6fa97990e67bf8153f6162c1efa42a31f10cdde866"
     }
   },
-  "created_at_utc": "2026-07-16T16:16:00+00:00",
+  "created_at_utc": "2026-07-16T16:38:49+00:00",
   "dataset": {
     "path": "data/curated/model_input_ndx.csv",
     "rows": 2558,
     "sha256": "abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce"
   },
-  "git_commit": "ac7d95de0afa75e84bde55d3d2eb35b2268df85e",
+  "git_commit": "3b8ca6c5583978a7668b6ab1b5c503554cada614",
   "key_results": {
     "multiseed_h20": {
       "ensemble_p_value": 0.2101,
