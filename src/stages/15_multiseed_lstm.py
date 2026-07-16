@@ -172,6 +172,7 @@ def run_analysis(cfg, stage_eval):
     horizons = cfg['features']['horizons']
     rw_rmse = rw_rmse_from_predictions(cfg, horizons)
 
+    np.random.seed(cfg['project']['seed'])
     sns.set_theme(style="whitegrid")
     fig, axes = plt.subplots(1, 4, figsize=(16, 4.5), sharey=False)
     for ax, h in zip(axes, horizons):
@@ -187,7 +188,7 @@ def run_analysis(cfg, stage_eval):
         ax.set_xlabel('')
         ax.tick_params(axis='x', rotation=20)
         ax.legend(fontsize=8)
-    fig.suptitle('RMSE OOS por semilla (10 seeds) — variantes LSTM vs RW', fontsize=13)
+    fig.suptitle('RMSE OOS por semilla (10 semillas) — variantes LSTM vs RW', fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
     fig.savefig(os.path.join(ROOT, "reports", "figs", "Fig_multiseed_boxplot.png"),
                 dpi=300)

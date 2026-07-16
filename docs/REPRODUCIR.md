@@ -107,10 +107,18 @@ final valida contrato, ausencia de fuga y `y_true` contra el dataset configurado
 ## Validacion efectuada
 
 El 2026-07-16 se ejecuto el pipeline sobre el dataset reconstruido en un
-worktree aislado con Python 3.12.13. Todas las etapas produjeron artefactos y el
-gate consolidado aprobo 15 pruebas. La primera corrida limpia expuso una
+worktree aislado con Python 3.12.13. La verificacion definitiva con
+`run_all.py --fresh` termino con `RUN_ALL_OK` en 38,0 minutos; todas las etapas
+produjeron artefactos y el gate consolidado aprobo 17 pruebas. La primera
+corrida limpia expuso una
 dependencia de orden en el analisis multisemilla; fue corregida y cubierta con
 una prueba de regresion antes de sellar los resultados.
+
+Las 512 predicciones y las 14 tablas comparables fueron identicas byte por byte
+en dos corridas independientes. Veinticinco de las 26 figuras tambien fueron
+identicas. El boxplot multi-semilla diferia porque el jitter grafico no fijaba
+semilla; se corrigio y dos regeneraciones consecutivas produjeron el mismo
+SHA-256. `data/manifests/reproduction_results.json` sella los hashes finales.
 
 Los resultados reconstruidos no coinciden con RC2.1, porque RC2.1 provenia del
 dataset heredado. `docs/reconstruccion_datos.md` resume las diferencias y su

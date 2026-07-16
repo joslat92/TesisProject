@@ -108,3 +108,32 @@ Se adopta **RC2.1** como etiqueta única del set sellado de resultados, alineada
 `config.yaml` (version 2.1.0) y los entregables externos. "RC2" en las bitácoras y
 entradas fechadas de junio-2026 designa exactamente el mismo set; no se reescriben
 los registros históricos. El tag git anotado `RC2.1` marca el commit sellado.
+
+---
+
+## D8 — Reconstruccion de procedencia y nueva corrida (2026-07-16)
+
+El dataset RC2.1 queda conservado como evidencia historica, pero deja de ser la
+base canonica para actualizar la tesis. La auditoria forense concluyo que su
+`Target_Price` reproduce QQQ ajustado, no el nivel del NASDAQ-100; su
+`VIX_Close` corresponde en realidad a la apertura del VIX por un error de
+etiquetado; y el origen del sentimiento no puede demostrarse, con una cola de
+75 valores constantes desde 2025-01-02.
+
+Se adopta como nueva base el dataset reconstruido desde NASDAQ-100 oficial
+(FRED/Nasdaq, cierre), VIX oficial (Cboe, cierre) y tono GDELT del alcance
+`nasdaq_market`. Tiene 2.558 filas y SHA-256
+`abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce`.
+La fecha 2017-08-29 se excluye por falta de tono, sin imputacion.
+
+La corrida completa desde arboles vacios termino con `RUN_ALL_OK` en 38,0
+minutos y gate 17/17. Dos ejecuciones independientes dieron 512/512 predicciones
+y 14/14 tablas comparables identicas byte por byte. Los resultados sellados
+muestran para LSTM_FULL vs RW en h=20: RMSE 0,03983 vs 0,04368, pero DM-HLN
+p=0,1811; mediana multi-semilla p=0,2225, 1/10 semillas bajo 0,05 y ensemble
+p=0,2101. En robustez 2025, RW minimiza RMSE en h=5, 10 y 20.
+
+**Decision:** ninguna cifra ni conclusion de RC2.1 se trasladara al Word. El
+capitulo de resultados, resumen, abstract, conclusiones, tablas y figuras deben
+actualizarse exclusivamente desde `data/manifests/reproduction_results.json` y
+los artefactos sellados de esta corrida.

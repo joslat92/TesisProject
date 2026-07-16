@@ -98,7 +98,8 @@ La corrida limpia uso el dataset con SHA-256
 `abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce`.
 Completo preparacion, modelos OOS, walk-forward, 120 entrenamientos
 multi-semilla, robustez 2025, evaluacion, figuras y regimenes. El gate final
-aprobo 15 pruebas.
+aprobo 17 pruebas y `run_all.py --fresh` termino con `RUN_ALL_OK` en 38,0
+minutos.
 
 En OOS 2024, LSTM_FULL obtuvo RMSE 0,03983 en h=20 frente a 0,04368 del RW,
 pero el DM-HLN de la semilla canonica no rechazo igualdad predictiva
@@ -115,6 +116,13 @@ La primera corrida verdaderamente limpia tambien revelo que el analisis
 multi-semilla dependia de `metrics_OOS.csv`, generado en una etapa posterior.
 La dependencia quedaba oculta por artefactos antiguos. Se corrigio calculando la
 referencia RW desde sus propias predicciones y se agrego una prueba de regresion.
+
+Dos corridas independientes produjeron 512/512 predicciones y 14/14 tablas
+comparables identicas byte por byte. Veinticinco de 26 figuras tambien fueron
+identicas. La unica diferencia era el jitter no sembrado del boxplot
+multi-semilla; tras fijar la semilla, dos regeneraciones consecutivas dieron el
+mismo SHA-256. El manifiesto `data/manifests/reproduction_results.json` sella
+dataset, artefactos, tablas y resultados clave.
 
 ## Estado y decisiones pendientes
 

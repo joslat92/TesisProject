@@ -14,3 +14,4 @@ credentials*.json
 data/source/
 data/curated/
 _run_archive/
+reproduction_*.log

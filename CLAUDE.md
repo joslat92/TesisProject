@@ -137,7 +137,10 @@ El proyecto estuvo pausado ~1 año por motivos médicos del autor. Se retomó en
 
 ## Datos
 
-- `data/raw/data.csv`: 2,561 obs diarias, 2015-02-17 a 2025-04-22.
-  Columnas: Date, Target_Price, Sentiment_GDELT, VIX_Close, logP, ret_log.
-- El estudio principal usa OOS=2024. Los datos de ene–abr 2025 (incluyen el shock de
-  volatilidad de abril) quedan reservados para un bloque opcional de robustez.
+- `data/raw/data.csv`: dataset heredado de 2.561 observaciones; se conserva solo
+  para auditoria forense y no alimenta el pipeline canonico.
+- `data/curated/model_input_ndx.csv`: dataset reconstruido de 2.558 observaciones,
+  SHA-256 `abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce`.
+  Se regenera localmente y esta excluido de Git; `config.yaml` apunta a esta ruta.
+- El estudio principal usa OOS=2024. Enero-abril de 2025 se reserva para el
+  bloque de robustez.
