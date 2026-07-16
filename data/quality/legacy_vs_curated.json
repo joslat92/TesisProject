@@ -1,0 +1,64 @@
+{
+  "created_at_utc": "2026-07-16T01:18:20+00:00",
+  "date_alignment": {
+    "curated_only_dates": [],
+    "curated_rows": 2558,
+    "legacy_only_dates": [
+      "2015-02-17",
+      "2015-02-18",
+      "2017-08-29"
+    ],
+    "legacy_rows": 2561,
+    "matched_rows": 2558
+  },
+  "inputs": {
+    "curated_sha256": "abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce",
+    "legacy_sha256": "a298deefffd0e8c87deee046bcbf556aecc9a8b21eb8c580f7f5cda45197815c"
+  },
+  "interpretation": "The rebuilt dataset changes all three substantive inputs. Model results from the inherited dataset cannot be transferred to the rebuilt dataset without rerunning the complete sealed pipeline.",
+  "sentiment": {
+    "correlation": 0.10704172041167902,
+    "curated_definition": "nasdaq_market; weighted GDELT mean tone",
+    "curated_distribution": {
+      "max": 1.3485217743906053,
+      "mean": -0.48630342191130144,
+      "median": -0.39156709924249133,
+      "min": -3.894705554859876,
+      "std": 0.6605557881585175
+    },
+    "curated_on_legacy_tail": {
+      "rows": 75,
+      "std": 0.7429428846036259,
+      "unique_values": 75
+    },
+    "legacy_constant_tail": {
+      "rows": 75,
+      "start": "2025-01-02",
+      "value": -1.2462
+    },
+    "legacy_definition": "unknown historical extraction and aggregation",
+    "legacy_distribution": {
+      "max": 6.1291,
+      "mean": -0.8185189210320561,
+      "median": -0.843,
+      "min": -6.3624,
+      "std": 1.211356404846913
+    },
+    "mean_absolute_difference": 1.0702801419937906
+  },
+  "target": {
+    "curated_definition": "NASDAQ-100 official daily close",
+    "legacy_inference": "QQQ adjusted close",
+    "level_correlation": 0.999927405554639,
+    "level_ratio_cv": 0.02156120478905137,
+    "log_return_correlation": 0.9987197432779565,
+    "median_level_ratio_legacy_to_curated": 0.023614752180858428
+  },
+  "vix": {
+    "correlation": 0.9701550964331752,
+    "curated_definition": "official Cboe daily close",
+    "legacy_inference": "daily open mislabeled as close",
+    "maximum_absolute_difference": 24.86,
+    "mean_absolute_difference": 1.0375684128225178
+  }
+}

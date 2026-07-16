@@ -32,6 +32,19 @@ def main() -> None:
     audits = {}
     samples = []
     for scope in config["gdelt"]["allowed_scopes"]:
+        scope_rows = candidates.loc[candidates["scope"] == scope].sort_values("Date")
+        if scope_rows.empty:
+            audits[scope] = {
+                "market_dates": int(len(market_dates)),
+                "covered_market_dates": 0,
+                "coverage_ratio": 0.0,
+                "longest_missing_market_date_run": int(len(market_dates)),
+                "missing_dates_first_20": market_dates.dt.date.astype(str)
+                    .head(20).tolist(),
+                "articles_total": 0,
+                "articles_per_covered_date": None,
+            }
+            continue
         aggregated = aggregate_to_market_dates(candidates, market_dates, scope)
         aligned = pd.DataFrame({"Date": market_dates}).merge(
             aggregated, on="Date", how="left"
@@ -53,7 +66,6 @@ def main() -> None:
                 "max": int(article_counts.max()),
             },
         }
-        scope_rows = candidates.loc[candidates["scope"] == scope].sort_values("Date")
         if "example_urls" in scope_rows:
             sample_count = min(30, len(scope_rows))
             indices = [round(i) for i in pd.Series(
@@ -69,10 +81,12 @@ def main() -> None:
         if audit["coverage_ratio"] >= 0.98
         and audit["longest_missing_market_date_run"] <= 2
     ]
-    coverage_only_candidate = (
-        "strict_ndx" if "strict_ndx" in eligible
-        else "broad_nasdaq" if "broad_nasdaq" in eligible
-        else None
+    coverage_only_candidate = next(
+        (
+            scope for scope in ["exact_ndx", "nasdaq_market", "broad_nasdaq"]
+            if scope in eligible
+        ),
+        None,
     )
     report = {
         "created_at_utc": utc_now(),

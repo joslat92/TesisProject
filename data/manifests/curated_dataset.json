@@ -1,0 +1,56 @@
+{
+  "config_file": "config_data.yaml",
+  "config_sha256": "aeab11c0bb140844760d2e156cb17d9cccf61342e60804e6b649591a2cb59ae1",
+  "created_at_utc": "2026-07-16T01:18:18+00:00",
+  "date_end": "2025-04-22",
+  "date_start": "2015-02-19",
+  "decisions": {
+    "calendar": {
+      "eligible_market_dates": "intersection of observed NASDAQ-100 and VIX dates",
+      "gdelt_mapping": "calendar day maps to the first eligible market date on or after it",
+      "missing_value_policy": "exclude and report market dates without sentiment; no imputation"
+    },
+    "gdelt": {
+      "aggregation": "article-count-weighted mean across calendar days mapped to each market date",
+      "allowed_scopes": [
+        "exact_ndx",
+        "nasdaq_market",
+        "broad_nasdaq"
+      ],
+      "provider": "The GDELT Project via Google BigQuery",
+      "selected_scope": "nasdaq_market",
+      "selection_rule": "coverage and documented relevance only; never predictive performance",
+      "table": "gdelt-bq.gdeltv2.gkg_partitioned",
+      "tone_field": "first component of V2Tone"
+    },
+    "period": {
+      "end": "2025-04-22",
+      "start": "2015-02-19"
+    },
+    "target": {
+      "field": "daily close",
+      "instrument": "NASDAQ-100 Index",
+      "output_column": "Target_Price",
+      "provider": "FRED",
+      "sensitivity_instrument": "Invesco QQQ ETF adjusted close",
+      "series": "NASDAQ100",
+      "upstream_source": "Nasdaq, Inc."
+    },
+    "version": 1,
+    "vix": {
+      "field": "daily close",
+      "output_column": "VIX_Close",
+      "provider": "Cboe Global Markets",
+      "series": "VIX Index"
+    }
+  },
+  "inputs": {
+    "gdelt_candidates_sha256": "c9d72a7b71e3180a1b419e664755b331aa33e0c23435df68973757a63fade5a3",
+    "nasdaq100_sha256": "00885456b3b619724658562f9e199f8e6d302d1b6df0cedacdda4350b254b221",
+    "vix_sha256": "907010dcc628a1ed1c86c3c6df470c4a8e618558435a93f92ab1b93b6e486bd2"
+  },
+  "manifest_version": 1,
+  "output_file": "data/curated/model_input_ndx.csv",
+  "output_sha256": "abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce",
+  "rows": 2558
+}

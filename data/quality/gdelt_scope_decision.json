@@ -1,0 +1,27 @@
+{
+  "decision_date": "2026-07-15",
+  "selected_scope": "nasdaq_market",
+  "selection_used_model_performance": false,
+  "coverage_evidence": {
+    "market_dates": 2559,
+    "covered_market_dates": 2558,
+    "coverage_ratio": 0.9996092223524814,
+    "longest_missing_market_date_run": 1,
+    "missing_dates": [
+      "2017-08-29"
+    ]
+  },
+  "alternatives": {
+    "exact_ndx": "rejected: zero observations",
+    "broad_nasdaq": "rejected: same coverage but no ECON_STOCKMARKET relevance filter"
+  },
+  "manual_relevance_review": {
+    "sample_file": "data/quality/gdelt_relevance_sample.csv",
+    "sample_sha256": "b839c1c94898608334b3d4d1d11a74a94109a45217afb7c2647d1070c8ea5b41",
+    "method": "Thirty dates per non-empty scope, distributed across the full period, with up to three example URLs per date.",
+    "finding": "The selected scope contains broad market and technology-market reporting together with some company-specific stories. It is more relevant than broad_nasdaq but is not an index-exclusive news corpus.",
+    "retrieval_limitation": "Many historical URLs are unavailable or blocked; classification therefore also uses the URL title path retained by GDELT."
+  },
+  "interpretation_constraint": "Use the series as a Nasdaq/technology-market news-tone proxy. Do not describe it as sentiment measured exclusively from NASDAQ-100 articles.",
+  "missing_value_decision": "Exclude and report 2017-08-29; do not forward-fill or impute a neutral tone."
+}

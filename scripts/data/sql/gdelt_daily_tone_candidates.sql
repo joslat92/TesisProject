@@ -6,8 +6,8 @@ WITH base AS (
     DocumentIdentifier,
     COALESCE(SourceCommonName, '') AS source_name,
     SAFE_CAST(SPLIT(V2Tone, ',')[SAFE_OFFSET(0)] AS FLOAT64) AS tone,
+    UPPER(COALESCE(Themes, '')) AS themes,
     UPPER(COALESCE(V2Organizations, '')) AS organizations,
-    UPPER(COALESCE(AllNames, '')) AS all_names,
     `DATE` AS gdelt_timestamp
   FROM `gdelt-bq.gdeltv2.gkg_partitioned`
   WHERE _PARTITIONTIME >= TIMESTAMP(@start_date)
@@ -21,10 +21,6 @@ deduplicated AS (
     AND tone IS NOT NULL
     AND (
       REGEXP_CONTAINS(organizations, r'(^|;)[^;]*NASDAQ[^;]*,')
-      OR REGEXP_CONTAINS(
-        all_names,
-        r'(^|;)[^;]*(NASDAQ|NASDAQ 100|NASDAQ-100|INVESCO QQQ|POWERSHARES QQQ)[^;]*,'
-      )
     )
   QUALIFY ROW_NUMBER() OVER (
     PARTITION BY article_date, DocumentIdentifier
@@ -35,15 +31,18 @@ labeled AS (
   SELECT
     *,
     REGEXP_CONTAINS(
-      organizations || ';' || all_names,
-      r'(NASDAQ 100|NASDAQ-100|INVESCO QQQ|POWERSHARES QQQ)'
-    ) AS is_strict_ndx
+      organizations,
+      r'(^|;)(NASDAQ 100|NASDAQ-100|NASDAQ100|NDX),[0-9]+'
+    ) AS is_exact_ndx,
+    REGEXP_CONTAINS(themes, r'(^|;)ECON_STOCKMARKET(;|$)') AS is_market_news
   FROM deduplicated
 ),
 expanded AS (
   SELECT 'broad_nasdaq' AS scope, * FROM labeled
   UNION ALL
-  SELECT 'strict_ndx' AS scope, * FROM labeled WHERE is_strict_ndx
+  SELECT 'nasdaq_market' AS scope, * FROM labeled WHERE is_market_news
+  UNION ALL
+  SELECT 'exact_ndx' AS scope, * FROM labeled WHERE is_exact_ndx
 )
 SELECT
   article_date AS Date,

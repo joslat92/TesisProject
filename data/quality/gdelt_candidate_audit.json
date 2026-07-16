@@ -1,0 +1,75 @@
+{
+  "candidate_file_sha256": "c9d72a7b71e3180a1b419e664755b331aa33e0c23435df68973757a63fade5a3",
+  "coverage_acceptance_thresholds": {
+    "maximum_missing_run": 2,
+    "minimum_ratio": 0.98
+  },
+  "coverage_only_candidate": "nasdaq_market",
+  "created_at_utc": "2026-07-16T01:13:56+00:00",
+  "manual_relevance_review_status": "pending",
+  "scope_audits": {
+    "broad_nasdaq": {
+      "articles_per_covered_date": {
+        "max": 8064,
+        "median": 2535.0,
+        "min": 145,
+        "p95": 4632.1500000000015
+      },
+      "articles_total": 6936770,
+      "coverage_ratio": 0.9996092223524814,
+      "covered_market_dates": 2558,
+      "longest_missing_market_date_run": 1,
+      "market_dates": 2559,
+      "missing_dates_first_20": [
+        "2017-08-29"
+      ]
+    },
+    "exact_ndx": {
+      "articles_per_covered_date": null,
+      "articles_total": 0,
+      "coverage_ratio": 0.0,
+      "covered_market_dates": 0,
+      "longest_missing_market_date_run": 2559,
+      "market_dates": 2559,
+      "missing_dates_first_20": [
+        "2015-02-19",
+        "2015-02-20",
+        "2015-02-23",
+        "2015-02-24",
+        "2015-02-25",
+        "2015-02-26",
+        "2015-02-27",
+        "2015-03-02",
+        "2015-03-03",
+        "2015-03-04",
+        "2015-03-05",
+        "2015-03-06",
+        "2015-03-09",
+        "2015-03-10",
+        "2015-03-11",
+        "2015-03-12",
+        "2015-03-13",
+        "2015-03-16",
+        "2015-03-17",
+        "2015-03-18"
+      ]
+    },
+    "nasdaq_market": {
+      "articles_per_covered_date": {
+        "max": 6648,
+        "median": 1884.0,
+        "min": 118,
+        "p95": 3429.3
+      },
+      "articles_total": 5277627,
+      "coverage_ratio": 0.9996092223524814,
+      "covered_market_dates": 2558,
+      "longest_missing_market_date_run": 1,
+      "market_dates": 2559,
+      "missing_dates_first_20": [
+        "2017-08-29"
+      ]
+    }
+  },
+  "selection_guard": "This audit does not inspect model performance. Scope selection also requires a documented manual relevance review of sampled URLs."
+}

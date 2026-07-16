@@ -54,7 +54,7 @@ def main() -> None:
     quality = {
         "created_at_utc": utc_now(),
         "selected_scope": scope,
-        "rows": int(len(curated)),
+        "rows_before_sentiment_exclusion": int(len(curated)),
         "date_start": curated["Date"].min().date().isoformat(),
         "date_end": curated["Date"].max().date().isoformat(),
         "target_dates_excluded_by_market_intersection": sorted(
@@ -74,11 +74,16 @@ def main() -> None:
     write_json(quality_path, quality)
     if quality["duplicate_dates"]:
         raise ValueError("El dataset curado contiene fechas duplicadas")
-    required = ["Target_Price", "VIX_Close", "Sentiment_GDELT"]
-    if curated[required].isna().any().any():
+    required_market = ["Target_Price", "VIX_Close"]
+    if curated[required_market].isna().any().any():
         raise ValueError(
-            f"El dataset curado tiene faltantes; revise {quality_path.relative_to(ROOT)}"
+            f"Las fuentes de mercado tienen faltantes; revise {quality_path.relative_to(ROOT)}"
         )
+    curated = curated.loc[present].copy().reset_index(drop=True)
+    quality["rows_after_sentiment_exclusion"] = int(len(curated))
+    write_json(quality_path, quality)
+    if curated["Sentiment_GDELT"].isna().any():
+        raise ValueError("La exclusion explicita no elimino todos los tonos faltantes")
     if (curated[["Target_Price", "VIX_Close"]] <= 0).any().any():
         raise ValueError("Precio objetivo o VIX no positivo")
     if not curated["Sentiment_GDELT"].between(-100, 100).all():

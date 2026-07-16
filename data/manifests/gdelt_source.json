@@ -1,0 +1,25 @@
+{
+  "actual_bytes_processed": 1298604906346,
+  "billing_project": "tesis-mmacc",
+  "created_at_utc": "2026-07-16T01:13:15+00:00",
+  "estimated_bytes_processed": 1298604906346,
+  "job_id": "3a8f75db-8560-424e-b9d4-601c256abde7",
+  "manifest_version": 1,
+  "maximum_bytes_billed": 1342177280000,
+  "output_file": "data/source/gdelt_daily_tone_candidates.csv",
+  "output_sha256": "c9d72a7b71e3180a1b419e664755b331aa33e0c23435df68973757a63fade5a3",
+  "parameters": {
+    "end": "2025-04-22",
+    "start": "2015-02-19"
+  },
+  "provider": "The GDELT Project via Google BigQuery public dataset",
+  "query_file": "scripts/data/sql/gdelt_daily_tone_candidates.sql",
+  "query_sha256": "f1f0bfa35b3245a8c0fa1e10693127842f4e92a65bab84e8285e98b5414bf160",
+  "rows": 7430,
+  "scope_counts": {
+    "broad_nasdaq": 3715,
+    "nasdaq_market": 3715
+  },
+  "selection_status": "candidate_scopes_only; final scope must be selected from coverage and relevance audit before model execution",
+  "table": "gdelt-bq.gdeltv2.gkg_partitioned"
+}

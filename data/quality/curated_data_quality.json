@@ -1,0 +1,21 @@
+{
+  "created_at_utc": "2026-07-16T01:18:18+00:00",
+  "date_end": "2025-04-22",
+  "date_start": "2015-02-19",
+  "duplicate_dates": 0,
+  "missing_counts_before_derived_columns": {
+    "Sentiment_GDELT": 1,
+    "Target_Price": 0,
+    "VIX_Close": 0
+  },
+  "rows_after_sentiment_exclusion": 2558,
+  "rows_before_sentiment_exclusion": 2559,
+  "selected_scope": "nasdaq_market",
+  "sentiment_longest_missing_run": 1,
+  "sentiment_missing_dates_first_20": [
+    "2017-08-29"
+  ],
+  "target_dates_excluded_by_market_intersection": [
+    "2019-04-19"
+  ]
+}

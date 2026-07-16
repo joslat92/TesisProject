@@ -22,13 +22,13 @@ vix:
 calendar:
   eligible_market_dates: "intersection of observed NASDAQ-100 and VIX dates"
   gdelt_mapping: "calendar day maps to the first eligible market date on or after it"
-  missing_value_policy: "fail; no implicit forward fill or neutral-value imputation"
+  missing_value_policy: "exclude and report market dates without sentiment; no imputation"
 
 gdelt:
   provider: "The GDELT Project via Google BigQuery"
   table: "gdelt-bq.gdeltv2.gkg_partitioned"
   tone_field: "first component of V2Tone"
   aggregation: "article-count-weighted mean across calendar days mapped to each market date"
-  selected_scope: null
-  allowed_scopes: [strict_ndx, broad_nasdaq]
+  selected_scope: nasdaq_market
+  allowed_scopes: [exact_ndx, nasdaq_market, broad_nasdaq]
   selection_rule: "coverage and documented relevance only; never predictive performance"

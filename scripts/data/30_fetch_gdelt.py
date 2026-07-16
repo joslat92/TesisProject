@@ -16,6 +16,7 @@ from common import sha256_file, utc_now, write_json
 
 
 SQL_PATH = Path(__file__).resolve().parent / "sql" / "gdelt_daily_tone_candidates.sql"
+ALLOWED_SCOPES = {"exact_ndx", "nasdaq_market", "broad_nasdaq"}
 
 
 def main() -> None:
@@ -23,6 +24,12 @@ def main() -> None:
     parser.add_argument("--billing-project", required=True)
     parser.add_argument("--start", default="2015-02-19")
     parser.add_argument("--end", default="2025-04-22")
+    parser.add_argument(
+        "--maximum-gib",
+        type=float,
+        default=850.0,
+        help="tope duro de bytes facturables para la consulta real",
+    )
     parser.add_argument(
         "--execute",
         action="store_true",
@@ -41,6 +48,8 @@ def main() -> None:
     end = pd.Timestamp(args.end).date()
     if start >= end:
         raise ValueError("--start debe ser anterior a --end")
+    if args.maximum_gib <= 0:
+        raise ValueError("--maximum-gib debe ser positivo")
 
     sql = SQL_PATH.read_text(encoding="utf-8")
     params = [
@@ -54,20 +63,28 @@ def main() -> None:
     dry_job = client.query(sql, job_config=dry_config)
     estimated = int(dry_job.total_bytes_processed or 0)
     gib = estimated / (1024 ** 3)
+    maximum_bytes = int(args.maximum_gib * (1024 ** 3))
     print(f"Dry-run OK: {estimated} bytes ({gib:.2f} GiB) estimados")
+    if estimated > maximum_bytes:
+        raise RuntimeError(
+            f"La estimacion supera el tope de {args.maximum_gib:.2f} GiB; "
+            "no se ejecutara la consulta"
+        )
     if not args.execute:
         print("No se ejecuto la consulta. Revise el costo y repita con --execute.")
         return
 
     job_config = bigquery.QueryJobConfig(
-        use_query_cache=False, query_parameters=params
+        use_query_cache=False,
+        query_parameters=params,
+        maximum_bytes_billed=maximum_bytes,
     )
     job = client.query(sql, job_config=job_config)
     frame = job.result().to_dataframe()
     if frame.empty:
         raise ValueError("GDELT no devolvio observaciones")
     frame["Date"] = pd.to_datetime(frame["Date"], errors="raise")
-    if not set(frame["scope"]).issubset({"strict_ndx", "broad_nasdaq"}):
+    if not set(frame["scope"]).issubset(ALLOWED_SCOPES):
         raise ValueError("GDELT devolvio un scope inesperado")
     if (frame["n_articles"] <= 0).any() or frame["mean_tone"].isna().any():
         raise ValueError("GDELT devolvio conteos o tonos invalidos")
@@ -86,6 +103,7 @@ def main() -> None:
         "billing_project": args.billing_project,
         "job_id": job.job_id,
         "estimated_bytes_processed": estimated,
+        "maximum_bytes_billed": maximum_bytes,
         "actual_bytes_processed": int(job.total_bytes_processed or 0),
         "output_file": "data/source/gdelt_daily_tone_candidates.csv",
         "output_sha256": sha256_file(output),
