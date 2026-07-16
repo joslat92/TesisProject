@@ -5,7 +5,7 @@ Rama: `entrega-final-tutor`
 
 ## Entregables
 
-- Version vigente: `Tesis_Maestro_Final.docx`.
+- Version vigente: `Tesis Final.docx`.
 - El maestro historico y los generadores de integracion permanecen en
   `reconstruccion-datos-origen`, no en la rama de entrega.
 - Manifiesto de resultados: `data/manifests/reproduction_results.json`.

@@ -5,7 +5,7 @@ reproducir sus resultados. No se hizo merge sobre la rama de reconstruccion.
 
 ## Contenido principal
 
-- `Tesis_Maestro_Final.docx`: documento academico final.
+- `Tesis Final.docx`: documento academico final.
 - `src/`, `run_all.py` y `config*.yaml`: pipeline ejecutable y configuracion.
 - `tests/`: 19 pruebas del contrato experimental y la reconstruccion.
 - `scripts/data/`: reconstruccion documentada de NASDAQ-100, VIX y GDELT.

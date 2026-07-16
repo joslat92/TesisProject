@@ -6,7 +6,7 @@ variantes LSTM con VIX y tono de noticias GDELT.
 
 ## Entregable principal
 
-- Documento final: `Tesis_Maestro_Final.docx`.
+- Documento final: `Tesis Final.docx`.
 - Rama de entrega: `entrega-final-tutor`.
 - Rama con antecedentes y archivos retirados: `reconstruccion-datos-origen`.
 - Informe de actualizacion: `docs/reporte_actualizacion_tesis_datos_reconstruidos.md`.
