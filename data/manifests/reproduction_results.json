@@ -16,18 +16,18 @@
       "tree_sha256": "aa0b1d4f597d1d80667506e74b39464d62bdc710c66e88ae7ee1f35499176264"
     },
     "reports/figs": {
-      "bytes": 7568087,
+      "bytes": 7572200,
       "files": 28,
-      "tree_sha256": "b4d78f20fe68272061c60a6fa97990e67bf8153f6162c1efa42a31f10cdde866"
+      "tree_sha256": "798fff63f06943fa32fa69f04043b901cb51863b94416672a26ddb8e764b3ece"
     }
   },
-  "created_at_utc": "2026-07-16T16:38:49+00:00",
+  "created_at_utc": "2026-07-16T19:23:32+00:00",
   "dataset": {
     "path": "data/curated/model_input_ndx.csv",
     "rows": 2558,
     "sha256": "abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce"
   },
-  "git_commit": "3b8ca6c5583978a7668b6ab1b5c503554cada614",
+  "git_commit": "19b4c24d8be691bc907f34120519f74634540401",
   "key_results": {
     "multiseed_h20": {
       "ensemble_p_value": 0.2101,
@@ -113,7 +113,8 @@
     "tbl_PT_OOS.csv": "5941fb44256376cbc97345fc76838a2a92247ccd00c14e9030c1d6b465d005e8"
   },
   "run": {
-    "reason": "run log not provided",
-    "verified": false
+    "final_gate_passed": 17,
+    "minutes": 38.0,
+    "verified": true
   }
 }
