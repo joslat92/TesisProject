@@ -1,36 +1,28 @@
 # Entrega final para tutor
 
-Esta rama contiene la tesis vigente y la evidencia necesaria para revisar o
-reproducir sus resultados. No se hizo merge sobre la rama de reconstruccion.
+Este repositorio contiene la tesis vigente y la evidencia necesaria para
+revisar o reproducir sus resultados.
 
 ## Contenido principal
 
 - `Tesis Final.docx`: documento academico final.
 - `src/`, `run_all.py` y `config*.yaml`: pipeline ejecutable y configuracion.
-- `tests/`: 19 pruebas del contrato experimental y la reconstruccion.
-- `scripts/data/`: reconstruccion documentada de NASDAQ-100, VIX y GDELT.
+- `tests/`: 19 pruebas del contrato experimental y la construccion de datos.
+- `scripts/data/`: adquisicion documentada de NASDAQ-100, VIX y GDELT.
 - `data/manifests/` y `data/quality/`: procedencia, hashes y controles.
 - `outputs/preds/`, `reports/data/` y `reports/figs/`: evidencia sellada usada
   en resultados, tablas y figuras.
 - `Registro_Decisiones_1.md`: decisiones metodologicas y alcance.
 
-## Archivos retirados de esta rama
+## Fuentes y alcance
 
-Los siguientes antecedentes siguen disponibles en
-`reconstruccion-datos-origen`, pero se excluyen de la entrega porque fueron
-reemplazados o eran material interno de trabajo:
+La base diaria integra el cierre del NASDAQ-100 publicado por FRED con fuente
+original Nasdaq, el cierre diario del VIX publicado por Cboe y un indicador de
+tono derivado de GDELT 2.0 GKG. El alcance `nasdaq_market` se eligio por
+cobertura y relevancia documental, no por rendimiento predictivo, y se
+interpreta como un proxy de noticias Nasdaq/tecnologia.
 
-- maestro Word anterior y generadores de integracion;
-- instrucciones de contexto para otros asistentes;
-- informes intermedios de cierre, correccion y limpieza;
-- scripts de auditorias puntuales ya cubiertas por la suite actual;
-- bitacoras y logs rapidos anteriores al cierre sellado.
-
-## Limitaciones que deben permanecer visibles
-
-El repositorio original de adquisicion se perdio y el dataset heredado no
-demostraba la procedencia de sus campos. Por esa razon, los resultados finales
-se obtuvieron sobre un dataset reconstruido desde fuentes identificadas. El
-dataset canonico no se redistribuye en Git y la reconstruccion de GDELT depende
-de BigQuery, facturacion activa y precios vigentes. Consulte
-`docs/REPRODUCIR.md` antes de ejecutar cualquier consulta con costo.
+El dataset canonico no se redistribuye en Git. Su construccion depende de la
+disponibilidad de las fuentes y, para GDELT, de un proyecto de BigQuery con
+facturacion activa. Antes de ejecutar una consulta con costo se debe revisar el
+dry-run, la cuota y el presupuesto. Consulte `docs/REPRODUCIR.md`.

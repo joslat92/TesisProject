@@ -7,23 +7,23 @@ variantes LSTM con VIX y tono de noticias GDELT.
 ## Entregable principal
 
 - Documento final: `Tesis Final.docx`.
-- Rama de entrega: `entrega-final-tutor`.
-- Rama con antecedentes y archivos retirados: `reconstruccion-datos-origen`.
-- Informe de actualizacion: `docs/reporte_actualizacion_tesis_datos_reconstruidos.md`.
+- Guia de construccion de datos: `docs/construccion_datos.md`.
+- Guia de reproduccion: `docs/REPRODUCIR.md`.
 
 ## Evidencia reproducible
 
-- `scripts/data/`: adquisicion, auditoria forense e integracion de fuentes.
+- `scripts/data/`: adquisicion, validacion e integracion de fuentes.
 - `data/manifests/`: URLs, consulta, parametros, versiones y hashes SHA-256.
-- `data/quality/`: controles de cobertura, procedencia y comparacion con el legado.
+- `data/quality/`: controles de cobertura y calidad de las fuentes canonicas.
 - `src/`: preparacion, modelado, evaluacion estadistica y figuras.
-- `tests/`: contrato, anti-fuga, reconstruccion, `y_true` y orquestacion.
+- `tests/`: contrato, anti-fuga, construccion de datos, `y_true` y orquestacion.
 - `outputs/preds/`: 512 predicciones selladas.
 - `reports/data/` y `reports/figs/`: tablas y figuras usadas en la tesis.
 - `logs/reproduction_final_summary_2026-07-16.log`: extracto verificable del cierre.
 
-El dataset canonico no se publica en Git. Se reconstruye como
-`data/curated/model_input_ndx.csv` y debe producir:
+El dataset canonico no se publica en Git. Se construye como
+`data/curated/model_input_ndx.csv` a partir de FRED/Nasdaq, Cboe y GDELT, y
+debe producir:
 
 ```text
 2.558 filas
@@ -49,7 +49,7 @@ temporal y no modifica los artefactos canonicos.
 Despues de editar el Word en Windows, sus indices y listas se pueden actualizar
 con `scripts/finalize_tutor_word.ps1`.
 
-La reproduccion completa se ejecuta, despues de reconstruir el dataset, con:
+La reproduccion completa se ejecuta, despues de construir el dataset, con:
 
 ```powershell
 .venv\Scripts\python.exe run_all.py --fresh

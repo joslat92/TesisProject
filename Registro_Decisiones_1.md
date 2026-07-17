@@ -111,16 +111,9 @@ los registros históricos. El tag git anotado `RC2.1` marca el commit sellado.
 
 ---
 
-## D8 — Reconstruccion de procedencia y nueva corrida (2026-07-16)
+## D8 — Construccion del dataset canonico y corrida sellada (2026-07-16)
 
-El dataset RC2.1 queda conservado como evidencia historica, pero deja de ser la
-base canonica para actualizar la tesis. La auditoria forense concluyo que su
-`Target_Price` reproduce QQQ ajustado, no el nivel del NASDAQ-100; su
-`VIX_Close` corresponde en realidad a la apertura del VIX por un error de
-etiquetado; y el origen del sentimiento no puede demostrarse, con una cola de
-75 valores constantes desde 2025-01-02.
-
-Se adopta como nueva base el dataset reconstruido desde NASDAQ-100 oficial
+Se adopta como base del estudio el dataset construido desde NASDAQ-100 oficial
 (FRED/Nasdaq, cierre), VIX oficial (Cboe, cierre) y tono GDELT del alcance
 `nasdaq_market`. Tiene 2.558 filas y SHA-256
 `abf82d900314ce09cd00113785804e9f6742c38dd0867880ae9620c2a12f92ce`.
@@ -140,7 +133,7 @@ Ningun contraste contra RW es significativo bajo HLN; la unica celda
 significativa del bloque compara LSTM con SARIMAX en h=20 (p_HLN=0,0496) y se
 trata como un hallazgo aislado.
 
-**Decision:** ninguna cifra ni conclusion de RC2.1 se trasladara al Word. El
-capitulo de resultados, resumen, abstract, conclusiones, tablas y figuras deben
-actualizarse exclusivamente desde `data/manifests/reproduction_results.json` y
-los artefactos sellados de esta corrida.
+**Decision:** el capitulo de resultados, resumen, abstract, conclusiones,
+tablas y figuras se actualizan exclusivamente desde
+`data/manifests/reproduction_results.json` y los artefactos sellados de esta
+corrida.

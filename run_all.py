@@ -163,7 +163,7 @@ def main():
     if not source.exists():
         raise SystemExit(
             f"[FALLO] No existe el dataset configurado: {source}\n"
-            "Reconstruyalo siguiendo docs/reconstruccion_datos.md antes de ejecutar el pipeline."
+            "Construyalo siguiendo docs/construccion_datos.md antes de ejecutar el pipeline."
         )
 
     if args.quick and not args.quick_worker:
