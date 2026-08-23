@@ -16,10 +16,11 @@ variantes LSTM con VIX y tono de noticias GDELT.
 - `data/manifests/`: URLs, consulta, parametros, versiones y hashes SHA-256.
 - `data/quality/`: controles de cobertura y calidad de las fuentes canonicas.
 - `src/`: preparacion, modelado, evaluacion estadistica y figuras.
-- `tests/`: contrato, anti-fuga, construccion de datos, `y_true` y orquestacion.
+- `tests/`: 27 pruebas de contrato, anti-fuga, construccion de datos, `y_true`,
+  inferencia y orquestacion.
 - `outputs/preds/`: 512 predicciones selladas.
 - `reports/data/` y `reports/figs/`: tablas y figuras usadas en la tesis.
-- `logs/reproduction_final_summary_2026-07-16.log`: extracto verificable del cierre.
+- `logs/reproduction_latest_summary.log`: extracto verificable del ultimo cierre.
 
 El dataset canonico no se publica en Git. Se construye como
 `data/curated/model_input_ndx.csv` a partir de FRED/Nasdaq, Cboe y GDELT, y
@@ -43,7 +44,7 @@ python -m venv .venv
 .venv\Scripts\python.exe run_all.py --quick
 ```
 
-Resultado de cierre: `19 passed`. El modo `--quick` trabaja en una copia
+Resultado de cierre: `27 passed`. El modo `--quick` trabaja en una copia
 temporal y no modifica los artefactos canonicos.
 
 Despues de editar el Word en Windows, sus indices y listas se pueden actualizar
@@ -55,6 +56,13 @@ La reproduccion completa se ejecuta, despues de construir el dataset, con:
 .venv\Scripts\python.exe run_all.py --fresh
 ```
 
-`--fresh` archiva los resultados existentes en `_run_archive/` antes de crear
-una corrida nueva. No se debe ejecutar la consulta GDELT sin revisar primero el
-dry-run, la cuota y el presupuesto del proyecto de Google Cloud.
+`--fresh` archiva los resultados existentes en `_run_archive/`, ejecuta una
+corrida nueva, valida las 27 pruebas y regenera el resumen y el manifiesto de
+integridad v3. La corrida sellada del 22 de agosto de 2026 termino en 19,916
+minutos, con 512 predicciones, 19 tablas y 28 figuras. No se debe ejecutar la
+consulta GDELT sin revisar primero el dry-run, la cuota y el presupuesto del
+proyecto de Google Cloud.
+
+La version academica definitiva se identifica con el tag
+`entrega-definitiva-2026-08-22`. El uso de asistencia de IA y los limites de
+licencia y redistribucion se documentan en `docs/USO_IA.md` y `NOTICE.md`.

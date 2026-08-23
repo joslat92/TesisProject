@@ -86,15 +86,20 @@ Reproduccion completa recomendada:
 .venv\Scripts\python.exe run_all.py --fresh
 ```
 
-`--fresh` mueve `data/processed`, `outputs` y `reports` a una carpeta fechada
-dentro de `_run_archive/`, recrea los directorios vacios y ejecuta todas las
-etapas. No borra los resultados anteriores y no se combina con `--quick`.
+`--fresh` verifica primero que exista el dataset canonico y que coincidan sus
+2.558 filas y su SHA-256. Luego mueve `data/processed`, `outputs` y `reports` a
+una carpeta fechada dentro de `_run_archive/`, recrea los directorios vacios y
+ejecuta todas las etapas. No borra los resultados anteriores y no se combina
+con `--quick`.
 
 La cadena incluye preparacion, diagnostico ADF/KPSS y correlogramas, RW, ARIMA,
 ARIMAX/SARIMAX, variantes LSTM, walk-forward, multi-semilla, robustez 2025,
 evaluacion, figuras y regimenes. Se detiene ante cualquier codigo de salida
-distinto de cero. El gate final valida el contrato, la ausencia de fuga y
-`y_true` contra el dataset configurado.
+distinto de cero. El gate final valida el contrato, la ausencia de fuga,
+`y_true` contra el dataset configurado, la ventana LSTM que termina en la fecha
+de origen y las rutinas de inferencia. Una corrida completa exitosa genera
+automaticamente `logs/reproduction_latest_summary.log` y
+`data/manifests/reproduction_results.json` (manifiesto v3 con hashes portables).
 
 ## Salidas
 
@@ -102,23 +107,24 @@ distinto de cero. El gate final valida el contrato, la ausencia de fuga y
 - `outputs/preds/WF/`: 336 archivos walk-forward.
 - `outputs/preds/MULTISEED/`: 120 archivos LSTM por semilla.
 - `outputs/preds/OOS_2025/`: 28 archivos de robustez.
-- `reports/data/`: metricas, DM-HLN, MZ, PT, ADF/KPSS y resumenes.
+- `reports/data/`: 19 tablas de metricas, DM-HLN, correcciones Holm/BH,
+  ablaciones, MZ conjunta, PT, ADF/KPSS y resumenes.
 - `reports/figs/`: 28 figuras selladas, incluidos boxplot y correlogramas.
 - `Tesis Final.docx`: tesis final con los resultados del dataset canonico.
 
 ## Validacion efectuada
 
-El 16 de julio de 2026 se ejecuto el pipeline completo con Python 3.12.13. La
-corrida definitiva mediante `run_all.py --fresh` termino con `RUN_ALL_OK` en
-38,0 minutos y el gate consolidado aprobo 17 controles. La suite completa de
-pruebas termino con `19 passed`.
+El 22 de agosto de 2026 se ejecuto el pipeline completo con Python 3.12.13 desde
+arboles de artefactos vacios. La corrida mediante `run_all.py --fresh` termino
+con `RUN_ALL_OK` en 19,916 minutos y la suite final registro `27 passed`.
 
-Dos corridas independientes reprodujeron 512/512 predicciones y todas las
-tablas comparables byte por byte. Las figuras quedaron deterministas. El
-manifiesto `data/manifests/reproduction_results.json` sella los hashes de 17
-tablas y 28 figuras.
+La auditoria independiente verifico 512/512 predicciones, reconstruyo cada
+`y_true` desde el dataset canonico, recalculo las metricas y comprobo los hashes
+portables de 19 tablas y 28 figuras. El manifiesto v3 en
+`data/manifests/reproduction_results.json` conserva el commit ejecutado, las
+versiones del entorno y la evidencia de la corrida. El extracto verificable se
+encuentra en `logs/reproduction_latest_summary.log`.
 
-El extracto verificable se conserva en
-`logs/reproduction_final_summary_2026-07-16.log`; incluye el SHA-256 del log
-completo, el gate de 17 controles, el cierre `RUN_ALL_OK` y la suite de 19
-pruebas.
+Para reproducir exactamente la entrega evaluada, usar el tag
+`entrega-definitiva-2026-08-22` y construir primero el dataset, que no se
+distribuye en Git.

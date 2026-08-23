@@ -12,11 +12,10 @@ idénticos a todos los modelos. Q1 = volatilidad más baja (calma), Q4 = más al
 (estrés). rmse_ret sobre retornos; mda por coincidencia de signo (convención
 del proyecto: sign(0) del RW no puntúa ⇒ MDA(RW)=0).
 
-⚠️ PROVISIONAL (pendiente de ratificación del director): la definición del
-régimen (proxy = VIX contemporáneo en t, cuartiles intra-muestra OOS) es una
-elección metodológica. Es reversible y aislada; si el director prefiere otra
-(p.ej. volatilidad realizada, terciles, umbrales fijos) se ajusta este stage
-sin tocar el resto del pipeline.
+La definicion del regimen (proxy = VIX contemporaneo en t, cuartiles de la
+muestra OOS) se usa solo como analisis descriptivo de robustez. No selecciona
+modelos, no interviene en el entrenamiento y no sustenta por si sola inferencia
+causal ni confirmatoria.
 """
 import pandas as pd
 import numpy as np

@@ -1,9 +1,10 @@
-# Registro de Decisiones — pendientes de ratificación del director
+# Registro histórico de decisiones metodológicas
 
 Proyecto: Tesis MMACC — Pronóstico multi-horizonte NASDAQ-100 (clásicos vs. LSTM con exógenas)
-Contexto: decisiones tomadas durante la ausencia del director (junio 2026) para no detener
-la retoma del proyecto. Cada decisión es reversible y está justificada para ratificación
-o ajuste a su regreso. Detalle técnico completo en logs/bitacora.md del repositorio.
+Contexto: decisiones documentadas durante la consolidación del proyecto. Las
+entradas D1–D8 se conservan como trazabilidad histórica; cuando una cifra fue
+recalculada, prevalecen la adenda D9, el manifiesto v3 y las tablas selladas.
+Detalle técnico en `logs/bitacora.md`.
 
 ## D1 — Alcance del estudio: versión multi-horizonte
 **Decisión:** la tesis final corresponde al estudio multi-horizonte (T ∈ {1,5,10,20} sobre
@@ -137,3 +138,30 @@ trata como un hallazgo aislado.
 tablas y figuras se actualizan exclusivamente desde
 `data/manifests/reproduction_results.json` y los artefactos sellados de esta
 corrida.
+
+---
+
+## D9 — Corrección definitiva de alineación LSTM e inferencia (2026-08-22)
+
+La auditoría final detectó que la ventana LSTM de longitud 40 terminaba en
+`t-1`, mientras la especificación escrita declaraba información disponible
+hasta `t`. Se corrigió la construcción de secuencias para que cada ventana
+termine en la fecha de origen `t` y el objetivo siga siendo el retorno directo
+`t→t+h`. Se añadieron pruebas unitarias explícitas, validación previa del hash y
+filas del dataset, contraste conjunto Mincer–Zarnowitz y correcciones Holm y
+Benjamini–Hochberg sobre los 20 contrastes primarios.
+
+La corrida completa desde árboles vacíos terminó en 19,916 minutos, con 27
+pruebas aprobadas, 512 predicciones, 19 tablas y 28 figuras. Tres contrastes
+contra RW tienen `p_HLN < 0,05` sin ajustar (ARIMAX h=1, LSTM_FULL h=1 y LSTM
+h=20), pero ninguno sobrevive Holm ni Benjamini–Hochberg. En h=20, LSTM base
+presenta p=0,0256 con semilla 42; el ensemble de diez semillas presenta
+p=0,0479 y cinco de diez semillas quedan bajo 0,05. Este resultado se describe
+como estabilidad parcial, no como evidencia confirmatoria, porque no sobrevive
+el ajuste de la familia primaria y no se replica en el bloque 2025.
+
+Para aporte incremental de exógenas, 15 de 16 ablaciones no son significativas
+tras ajuste. La única excepción es LSTM_FULL frente a LSTM_SENT en h=1, donde
+LSTM_FULL es peor (DM-HLN=-3,0604; p_Holm=p_BH=0,0392). Por tanto, la conclusión
+definitiva es que VIX y tono no aportan una mejora predictiva robusta en esta
+muestra.
