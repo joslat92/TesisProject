@@ -17,8 +17,8 @@ bytes son obligatorios antes de usar `--execute`.
 ## Clon y entorno
 
 ```powershell
-git clone https://github.com/joslat92/TesisProject-Tutor.git
-cd TesisProject-Tutor
+git clone https://github.com/joslat92/TesisProject.git
+cd TesisProject
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install --upgrade pip
 .venv\Scripts\python.exe -m pip install -r requirements.txt
