@@ -56,6 +56,7 @@ models:
       seasonal_order: [0, 1, 0, 5]
       
     lstm:
+      strategy: "direct_horizon"
       # HPs canónicos de la tesis: window=40, hidden=64, dropout=0.2,
       # Adam lr=0.001, epochs=30, batch=64, seed=42, early-stopping val 20%.
       seq_len: 40
@@ -66,8 +67,9 @@ models:
       batch_size: 64
       patience: 5
       val_frac: 0.20
-      # Exógenas SIEMPRE rezagadas (lag1); la ventana de 40 días ya aporta
-      # la historia reciente de cada canal.
+      # Predicción directa: una red separada aprende Target_Ret_h{h} para cada
+      # horizonte. La ventana termina en la fecha de origen t. Exógenas
+      # SIEMPRE rezagadas (lag1); la ventana aporta la historia de cada canal.
       variants:
         LSTM:      ["ret_1d"]
         LSTM_SENT: ["ret_1d", "Sentiment_GDELT_lag1"]

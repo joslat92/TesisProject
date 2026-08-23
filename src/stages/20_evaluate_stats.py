@@ -6,6 +6,7 @@ import sys
 import statsmodels.api as sm
 from scipy import stats
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from statsmodels.stats.multitest import multipletests
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from src.core.dm import diebold_mariano
@@ -32,8 +33,8 @@ def diebold_mariano_test(y_true, y_pred_base, y_pred_chal, h):
 def mincer_zarnowitz_test(y_true, y_pred, h=1):
     """
     Regresión MZ: y_true = alpha + beta * y_pred + error.
-    Devuelve alpha, beta, R2, p(alpha=0), p(beta=0) y p(beta=1) — el test
-    de insesgadez relevante es la pareja H0: alpha=0 y H0: beta=1.
+    Devuelve alpha, beta, R2, pruebas marginales y el Wald HAC conjunto
+    H0: (alpha, beta) = (0, 1).
 
     Errores HAC con maxlags = h-1 (coherente con el kernel del DM): los
     retornos acumulados solapados inducen autocorrelación MA(h-1) en el
@@ -51,7 +52,7 @@ def mincer_zarnowitz_test(y_true, y_pred, h=1):
     if y_pred.nunique() < 2:
         raise ValueError("MZ requiere variación en el pronóstico.")
 
-    X = sm.add_constant(y_pred)
+    X = pd.DataFrame({'const': 1.0, 'forecast': y_pred})
     model = sm.OLS(y_true, X)
     results = model.fit(cov_type='HAC', cov_kwds={'maxlags': max(h - 1, 0)})
 
@@ -60,14 +61,10 @@ def mincer_zarnowitz_test(y_true, y_pred, h=1):
     r2 = results.rsquared
     p_alpha = results.pvalues.iloc[0]
     p_beta0 = results.pvalues.iloc[1]
-    # H0: beta = 1 (t robusto HAC)
-    se_beta = results.bse.iloc[1]
-    p_beta1 = np.nan
-    if np.isfinite(se_beta) and se_beta > 0:
-        t_b1 = (beta - 1.0) / se_beta
-        p_beta1 = 2 * (1 - stats.t.cdf(np.abs(t_b1), df=results.df_resid))
+    p_beta1 = float(results.t_test('forecast = 1').pvalue)
+    p_joint = float(results.wald_test('const = 0, forecast = 1', scalar=True).pvalue)
 
-    return alpha, beta, r2, p_alpha, p_beta0, p_beta1
+    return alpha, beta, r2, p_alpha, p_beta0, p_beta1, p_joint
 
 def run_evaluation():
     cfg = load_config()
@@ -166,7 +163,7 @@ def run_evaluation():
                 })
 
             # --- 3. MINCER-ZARNOWITZ (Sobre Niveles) ---
-            alpha, beta, r2, p_a, p_b0, p_b1 = mincer_zarnowitz_test(
+            alpha, beta, r2, p_a, p_b0, p_b1, p_joint = mincer_zarnowitz_test(
                 df['y_true_level'], df['y_pred_level'], h=h)
             mz_data.append({
                 'Horizon': h,
@@ -176,6 +173,7 @@ def run_evaluation():
                 'R2': round(r2, 4),
                 'p_Alpha': round(p_a, 4),   # H0: alpha=0
                 'p_Beta1': round(p_b1, 4),  # H0: beta=1
+                'p_Joint': round(p_joint, 4),  # H0: (alpha,beta)=(0,1)
             })
 
     # Guardar Reportes
@@ -193,6 +191,56 @@ def run_evaluation():
     if dm_data:
         df_dm = pd.DataFrame(dm_data)
         df_dm.to_csv(os.path.join(output_dir, "tbl_DM_OOS.csv"), index=False)
+
+        # Familia primaria preespecificada: cinco modelos únicos vs RW por
+        # cuatro horizontes. SARIMAX se excluye porque es idéntico a ARIMAX.
+        primary_models = ['ARIMA', 'ARIMAX', 'LSTM', 'LSTM_SENT', 'LSTM_FULL']
+        df_primary = df_dm[
+            (df_dm['Benchmark'] == 'RW') &
+            (df_dm['Challenger'].isin(primary_models))
+        ].copy()
+        df_primary['p_Holm'] = multipletests(df_primary['p_HLN'], method='holm')[1]
+        df_primary['p_BH'] = multipletests(df_primary['p_HLN'], method='fdr_bh')[1]
+        df_primary['Sig_Holm_5pct'] = np.where(df_primary['p_Holm'] < 0.05, 'YES', 'NO')
+        df_primary['Sig_BH_5pct'] = np.where(df_primary['p_BH'] < 0.05, 'YES', 'NO')
+        df_primary[['p_Holm', 'p_BH']] = df_primary[['p_Holm', 'p_BH']].round(4)
+        df_primary.to_csv(os.path.join(output_dir, "tbl_DM_primary_adjusted.csv"), index=False)
+
+        # Contrastes que responden directamente al aporte incremental de las
+        # exógenas, con corrección conjunta sobre las 16 ablaciones.
+        ablation_pairs = [
+            ('ARIMA', 'ARIMAX'),
+            ('LSTM', 'LSTM_SENT'),
+            ('LSTM', 'LSTM_FULL'),
+            ('LSTM_SENT', 'LSTM_FULL'),
+        ]
+        ablation_rows = []
+        for h in horizons:
+            for benchmark, challenger in ablation_pairs:
+                base = pd.read_csv(os.path.join(
+                    preds_dir, cfg['contract']['naming']['oos'].format(h=h, model=benchmark)))
+                chal = pd.read_csv(os.path.join(
+                    preds_dir, cfg['contract']['naming']['oos'].format(h=h, model=challenger)))
+                common = pd.merge(
+                    chal[['Date', 'y_true_ret', 'y_pred_ret']],
+                    base[['Date', 'y_pred_ret']],
+                    on='Date', suffixes=('_chall', '_base'))
+                _, _, dm_hln, p_hln = diebold_mariano(
+                    common['y_true_ret'], common['y_pred_ret_base'],
+                    common['y_pred_ret_chall'], h=h)
+                ablation_rows.append({
+                    'Horizon': h,
+                    'Benchmark': benchmark,
+                    'Challenger': challenger,
+                    'DM_HLN': dm_hln,
+                    'p_HLN': p_hln,
+                })
+        df_ablation = pd.DataFrame(ablation_rows)
+        df_ablation['p_Holm'] = multipletests(df_ablation['p_HLN'], method='holm')[1]
+        df_ablation['p_BH'] = multipletests(df_ablation['p_HLN'], method='fdr_bh')[1]
+        for col in ['DM_HLN', 'p_HLN', 'p_Holm', 'p_BH']:
+            df_ablation[col] = df_ablation[col].round(4)
+        df_ablation.to_csv(os.path.join(output_dir, "tbl_DM_ablations.csv"), index=False)
         dm_compact = df_dm.pivot_table(index=['Horizon', 'Challenger'],
                                        columns='Benchmark', values='p_HLN').reset_index()
         dm_compact.columns = ['Horizon', 'Challenger'] + [f"pHLN_vs_{c}" for c in dm_compact.columns[2:]]

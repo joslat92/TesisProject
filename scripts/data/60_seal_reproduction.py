@@ -23,6 +23,7 @@ ARTIFACT_TREES = (
     "reports/data",
     "reports/figs",
 )
+TEXT_ARTIFACT_SUFFIXES = {".csv", ".json", ".log", ".md", ".py", ".txt", ".yaml", ".yml"}
 ENVIRONMENT_PACKAGES = (
     "numpy",
     "pandas",
@@ -39,7 +40,7 @@ def tree_manifest(root: Path) -> dict:
     total_bytes = 0
     for path in files:
         relative = path.relative_to(root).as_posix()
-        file_hash = sha256_file(path)
+        file_hash = artifact_sha256(path)
         digest.update(relative.encode("utf-8"))
         digest.update(b"\0")
         digest.update(file_hash.encode("ascii"))
@@ -50,6 +51,14 @@ def tree_manifest(root: Path) -> dict:
         "bytes": total_bytes,
         "tree_sha256": digest.hexdigest(),
     }
+
+
+def artifact_sha256(path: Path) -> str:
+    """Hash portable: normaliza CRLF/CR a LF para artefactos de texto."""
+    if path.suffix.lower() not in TEXT_ARTIFACT_SUFFIXES:
+        return sha256_file(path)
+    raw = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def scalar(df: pd.DataFrame, **filters):
@@ -99,6 +108,19 @@ def parse_run_log(path: Path | None, summary_path: Path | None = None) -> dict:
     return result
 
 
+def explicit_run_evidence(minutes: float, final_gate_passed: int,
+                          summary_path: Path | None = None) -> dict:
+    result = {
+        "verified": True,
+        "verification_scope": "run_all_internal_success",
+        "minutes": minutes,
+        "final_gate_passed": final_gate_passed,
+    }
+    if summary_path is not None:
+        result["versioned_summary"] = file_evidence(summary_path)
+    return result
+
+
 def environment_manifest() -> dict:
     packages = {}
     for package in ENVIRONMENT_PACKAGES:
@@ -118,7 +140,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-log", type=Path)
     parser.add_argument("--run-summary", type=Path)
+    parser.add_argument("--verified-run", action="store_true")
+    parser.add_argument("--minutes", type=float)
+    parser.add_argument("--final-gate-passed", type=int)
     args = parser.parse_args()
+    if args.verified_run and (args.minutes is None or args.final_gate_passed is None):
+        parser.error("--verified-run requiere --minutes y --final-gate-passed")
 
     curated_manifest = json.loads(
         (ROOT / "data/manifests/curated_dataset.json").read_text(encoding="utf-8")
@@ -165,7 +192,8 @@ def main():
         }
 
     payload = {
-        "manifest_version": 2,
+        "manifest_version": 3,
+        "hash_policy": "sha256; artefactos de texto normalizados a LF",
         "created_at_utc": utc_now(),
         "git_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -175,16 +203,24 @@ def main():
             "sha256": dataset_hash,
             "rows": curated_manifest["rows"],
         },
-        "run": parse_run_log(
-            ROOT / args.run_log if args.run_log else None,
-            ROOT / args.run_summary if args.run_summary else None,
+        "run": (
+            explicit_run_evidence(
+                args.minutes,
+                args.final_gate_passed,
+                ROOT / args.run_summary if args.run_summary else None,
+            )
+            if args.verified_run else
+            parse_run_log(
+                ROOT / args.run_log if args.run_log else None,
+                ROOT / args.run_summary if args.run_summary else None,
+            )
         ),
         "environment": environment_manifest(),
         "artifact_trees": {
             relative: tree_manifest(ROOT / relative) for relative in ARTIFACT_TREES
         },
         "report_hashes": {
-            path.name: sha256_file(path)
+            path.name: artifact_sha256(path)
             for path in sorted((ROOT / "reports/data").glob("*.csv"))
         },
         "key_results": {

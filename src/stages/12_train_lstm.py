@@ -36,10 +36,18 @@ class LSTMModel(nn.Module):
         return self.linear(self.dropout(out[:, -1, :]))
 
 def create_sequences(X_data, y_data, seq_len):
+    """Crea ventanas de ``seq_len`` que TERMINAN en la fecha del target.
+
+    La muestra etiquetada en la fila t contiene las features de
+    t-seq_len+1, ..., t. De este modo la LSTM comparte el mismo conjunto de
+    información hasta t que ARIMA/ARIMAX y el nivel base P_t usado para
+    reconstruir el pronóstico.
+    """
     xs, ys = [], []
-    for i in range(len(X_data) - seq_len):
-        xs.append(X_data[i : i+seq_len])
-        ys.append(y_data[i+seq_len])
+    for end in range(seq_len - 1, len(X_data)):
+        start = end - seq_len + 1
+        xs.append(X_data[start:end + 1])
+        ys.append(y_data[end])
     return np.array(xs), np.array(ys)
 
 def load_config():
@@ -110,9 +118,9 @@ def fit_predict(df, feature_cols, params, seed, h, price_col, train_end,
     full_targets = df[target_col].fillna(0).values
 
     X_all, y_all = create_sequences(full_feats, full_targets, seq_len)
-    dates_all = df['Date'].iloc[seq_len:].reset_index(drop=True)
+    dates_all = df['Date'].iloc[seq_len - 1:].reset_index(drop=True)
 
-    target_end_dates = df['Date'].shift(-h).iloc[seq_len:].reset_index(drop=True)
+    target_end_dates = df['Date'].shift(-h).iloc[seq_len - 1:].reset_index(drop=True)
     mask_train = target_end_dates <= train_end
     mask_pred = (dates_all >= pred_start) & (dates_all <= pred_end)
 
@@ -127,10 +135,9 @@ def fit_predict(df, feature_cols, params, seed, h, price_col, train_end,
 
     X_pred = X_all[mask_pred]
     # Mapeo a filas ORIGINALES del parquet: la muestra i del frame desplazado
-    # (post-secuencias) corresponde a la fila i + seq_len del df. Usar el
-    # índice reseteado directamente contra df.loc desplaza y_true 40 filas
-    # (bug detectado 2026-06-11 en el bloque 2025).
-    orig_rows = dates_all[mask_pred].index + seq_len
+    # (post-secuencias) corresponde a la fila i + seq_len - 1 del df. La
+    # última fila de X_pred es, por contrato, la misma fecha de origen t.
+    orig_rows = dates_all[mask_pred].index + seq_len - 1
     assert (df['Date'].iloc[orig_rows].values
             == dates_all[mask_pred].values).all(), \
         "Desalineación fila/fecha en la salida LSTM"

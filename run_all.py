@@ -26,7 +26,10 @@ El gate del pipeline (contrato + anti-fuga + cordura de y_true contra la fuente
 primaria) corre dentro de 20_evaluate_stats y detiene todo si falla.
 """
 import argparse
+import hashlib
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -82,6 +85,79 @@ def configured_data_source(root=ROOT):
     return root / cfg["data"]["raw_source"]
 
 
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def validate_canonical_data(root=ROOT):
+    """Falla antes de entrenar si la fuente no es el dataset sellado."""
+    source = configured_data_source(root)
+    if not source.exists():
+        raise SystemExit(
+            f"[FALLO] No existe el dataset configurado: {source}\n"
+            "Construyalo siguiendo docs/construccion_datos.md antes de ejecutar el pipeline."
+        )
+    manifest_path = root / "data" / "manifests" / "curated_dataset.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    observed_hash = sha256_file(source)
+    expected_hash = manifest["output_sha256"]
+    if observed_hash != expected_hash:
+        raise SystemExit(
+            "[FALLO] El dataset configurado no coincide con el sello canónico.\n"
+            f"Esperado: {expected_hash}\nObservado: {observed_hash}"
+        )
+    with open(source, "r", encoding="utf-8") as handle:
+        observed_rows = sum(1 for _ in handle) - 1
+    if observed_rows != manifest["rows"]:
+        raise SystemExit(
+            f"[FALLO] Filas del dataset: {observed_rows}; esperadas: {manifest['rows']}"
+        )
+    print(f">>> [preflight] dataset canónico verificado ({observed_rows} filas, SHA-256 OK)")
+    return source
+
+
+def collect_test_count(root=ROOT):
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "tests", "--collect-only", "-q"],
+        cwd=root, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise SystemExit("[FALLO] No se pudo contar la suite final de pruebas")
+    match = re.search(r"(\d+) tests? collected", result.stdout)
+    if not match:
+        raise SystemExit("[FALLO] pytest no informó el número de pruebas recolectadas")
+    return int(match.group(1))
+
+
+def seal_current_run(elapsed_minutes, final_gate_passed, root=ROOT):
+    """Registra y sella los artefactos generados por esta misma corrida."""
+    summary = root / "logs" / "reproduction_latest_summary.log"
+    summary.parent.mkdir(parents=True, exist_ok=True)
+    summary.write_text(
+        "# Resumen generado automáticamente por run_all.py\n\n"
+        f"RUN_ALL_OK (COMPLETO) en {elapsed_minutes:.3f} min\n"
+        f"Suite final: {final_gate_passed} passed\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(root / "scripts" / "data" / "60_seal_reproduction.py"),
+            "--verified-run",
+            "--minutes", f"{elapsed_minutes:.6f}",
+            "--final-gate-passed", str(final_gate_passed),
+            "--run-summary", str(summary.relative_to(root)),
+        ],
+        cwd=root,
+    )
+    if result.returncode != 0:
+        raise SystemExit("[FALLO] No se pudo sellar la corrida completa")
+
+
 def archive_generated_artifacts(root=ROOT, timestamp=None):
     """Archive generated trees before a clean full run; never delete them."""
     stamp = timestamp or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -107,9 +183,12 @@ def run_quick_isolated():
     """Ejecuta el smoke test en una copia temporal sin tocar artefactos sellados."""
     ignore = shutil.ignore_patterns(
         ".git", ".venv", "venv", "__pycache__", ".pytest_cache",
-        "outputs", "reports", "logs", "*.docx", "*.pdf", "*.zip",
+        "outputs", "reports", "logs", "tesis-quick-*",
+        "*.docx", "*.pdf", "*.zip",
     )
-    with tempfile.TemporaryDirectory(prefix="tesis-quick-") as tmp:
+    # Forzar el temporal FUERA de ROOT: en entornos con TMPDIR apuntando al
+    # cwd, el comportamiento por defecto copiaría el sandbox dentro de sí.
+    with tempfile.TemporaryDirectory(prefix="tesis-quick-", dir=ROOT.parent) as tmp:
         sandbox = Path(tmp) / ROOT.name
         print(f">>> [quick] creando copia aislada en {sandbox}")
         shutil.copytree(ROOT, sandbox, ignore=ignore)
@@ -159,12 +238,7 @@ def main():
     if args.quick and args.fresh:
         ap.error("--fresh no se combina con --quick; --quick ya corre aislado")
 
-    source = configured_data_source()
-    if not source.exists():
-        raise SystemExit(
-            f"[FALLO] No existe el dataset configurado: {source}\n"
-            "Construyalo siguiendo docs/construccion_datos.md antes de ejecutar el pipeline."
-        )
+    validate_canonical_data()
 
     if args.quick and not args.quick_worker:
         run_quick_isolated()
@@ -203,7 +277,11 @@ def main():
     finally:
         restore_configs(backups)
 
-    print(f"\n=== RUN_ALL_OK ({mode}) en {(time.time()-t0)/60:.1f} min ===")
+    elapsed_minutes = (time.time() - t0) / 60
+    if not args.quick:
+        final_gate_passed = collect_test_count()
+        seal_current_run(elapsed_minutes, final_gate_passed)
+    print(f"\n=== RUN_ALL_OK ({mode}) en {elapsed_minutes:.1f} min ===")
     print("Tablas: reports/data | Figuras: reports/figs | Preds: outputs/preds")
 
 if __name__ == "__main__":

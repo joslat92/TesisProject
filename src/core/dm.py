@@ -26,7 +26,9 @@ def diebold_mariano(y_true, y_pred_bench, y_pred_chall, h=1):
     Devuelve (dm_stat, p_value, dm_hln, p_hln):
     - dm_stat, p_value: estadístico clásico y p-valor N(0,1) dos colas.
     - dm_hln, p_hln: estadístico corregido HLN y p-valor t(n−1) dos colas.
-    Si la varianza HAC degenera (≤0), devuelve (0, 1, 0, 1) — sin evidencia.
+    Si la varianza HAC degenera, distingue predicciones idénticas (sin
+    evidencia) de una diferencia de pérdida constante no nula (evidencia
+    determinista, estadístico infinito).
     """
     y_true = np.asarray(y_true, dtype=float)
     e_bench = (y_true - np.asarray(y_pred_bench, dtype=float)) ** 2
@@ -56,9 +58,13 @@ def diebold_mariano(y_true, y_pred_bench, y_pred_chall, h=1):
     var_d = (gamma_0 + 2 * gamma_sum) / n
 
     if var_d <= 1e-16:
-        # Caso degenerado genuino: predicciones idénticas (d constante ≈ 0,
-        # p.ej. ARIMAX ≡ SARIMAX con gate estacional apagado) ⇒ sin evidencia.
-        return 0.0, 1.0, 0.0, 1.0
+        if abs(mean_d) <= 1e-12:
+            # Predicciones idénticas (p.ej. ARIMAX ≡ SARIMAX): sin evidencia.
+            return 0.0, 1.0, 0.0, 1.0
+        # Diferencia de pérdida constante y no nula: no existe incertidumbre
+        # muestral estimable alrededor de una media distinta de cero.
+        signed_inf = np.copysign(np.inf, mean_d)
+        return signed_inf, 0.0, signed_inf, 0.0
 
     dm_stat = mean_d / np.sqrt(var_d)
     p_value = 2 * (1 - stats.norm.cdf(np.abs(dm_stat)))

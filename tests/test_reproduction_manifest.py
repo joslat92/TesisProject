@@ -28,3 +28,12 @@ def test_tree_manifest_is_stable_and_content_sensitive(tmp_path):
 
     (tmp_path / "one.txt").write_text("changed", encoding="utf-8")
     assert sealer.tree_manifest(tmp_path)["tree_sha256"] != first["tree_sha256"]
+
+
+def test_text_artifact_hash_is_portable_across_line_endings(tmp_path):
+    sealer = load_sealer()
+    lf = tmp_path / "lf.csv"
+    crlf = tmp_path / "crlf.csv"
+    lf.write_bytes(b"a,b\n1,2\n")
+    crlf.write_bytes(b"a,b\r\n1,2\r\n")
+    assert sealer.artifact_sha256(lf) == sealer.artifact_sha256(crlf)

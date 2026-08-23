@@ -162,6 +162,22 @@ def test_lstm_prediction_ignores_future():
         f"({base_t} vs {corrupt_t})"
     )
 
+
+def test_lstm_sequence_ends_on_target_origin_date():
+    """La ventana etiquetada en t debe incluir la fila t, no terminar en t-1."""
+    stage = _load_stage("12_train_lstm.py", "stage_12_train_lstm_alignment")
+    seq_len = 4
+    features = np.arange(12, dtype=float).reshape(-1, 1)
+    targets = np.arange(100, 112, dtype=float)
+
+    X, y = stage.create_sequences(features, targets, seq_len)
+
+    assert len(X) == len(features) - seq_len + 1
+    assert np.array_equal(X[0, :, 0], np.array([0.0, 1.0, 2.0, 3.0]))
+    assert y[0] == targets[seq_len - 1]
+    assert X[-1, -1, 0] == features[-1, 0]
+    assert y[-1] == targets[-1]
+
 def test_rw_preds_are_zero_return():
     """RW del contrato: y_hat_t(h) = 0 en retornos, nivel = P_t."""
     for h in [1, 5, 10, 20]:

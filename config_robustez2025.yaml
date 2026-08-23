@@ -53,6 +53,7 @@ models:
       seasonal_order: [0, 1, 0, 5]
 
     lstm:
+      strategy: "direct_horizon"
       # HPs canónicos (D2); semilla única 42 para el bloque de robustez.
       seq_len: 40
       hidden_dim: 64
